@@ -3,15 +3,15 @@ use super::search::{a_star, AStarNode};
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct LocationTime {
     pub location: (i32, i32),
-    time: i32,
+    pub time: i32,
 }
 
 #[derive(Debug)]
 pub struct Grid {
-    width: i32,
-    height: i32,
-    obstacles: Vec<LocationTime>,
-    goal: (i32, i32),
+    pub width: i32,
+    pub height: i32,
+    pub obstacles: Vec<LocationTime>,
+    pub goal: (i32, i32),
 }
 
 #[derive(Debug, Clone, Copy)]

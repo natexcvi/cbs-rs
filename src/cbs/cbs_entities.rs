@@ -41,6 +41,7 @@ pub struct Agent {
 
 pub struct ConflictTreeNode<'a> {
     constraints: Vec<&'a Constraint<'a>>,
+    agents: Vec<&'a Agent>,
     paths: HashMap<&'a Agent, Path>,
 }
 
@@ -48,6 +49,7 @@ impl<'a> ConflictTreeNode<'a> {
     fn new() -> ConflictTreeNode<'a> {
         ConflictTreeNode {
             constraints: Vec::new(),
+            agents: Vec::new(),
             paths: HashMap::new(),
         }
     }
@@ -58,12 +60,20 @@ impl<'a> ConflictTreeNode<'a> {
     }
 
     fn calculate_paths(&mut self) {
-        for agent in self.paths.keys() {
+        for agent in self.agents.iter() {
             let path = find_shortest_path(
                 Grid {
                     width: 10,
                     height: 10,
-                    obstacles: self.constraints.iter().filter(|c| c.agent == *agent).map(|c| LocationTime { location: c.location, time: c.time }).collect(),
+                    obstacles: self
+                        .constraints
+                        .iter()
+                        .filter(|c| c.agent == *agent)
+                        .map(|c| LocationTime {
+                            location: c.location,
+                            time: c.time,
+                        })
+                        .collect(),
                     goal: agent.goal,
                 },
                 LocationTime {
@@ -71,7 +81,8 @@ impl<'a> ConflictTreeNode<'a> {
                     time: 0,
                 },
             );
-            self.paths.insert(agent, path.unwrap().iter().map(|n| n.location).collect());
+            self.paths
+                .insert(agent, path.unwrap().iter().map(|n| n.location).collect());
         }
     }
 }
