@@ -1,13 +1,13 @@
 use super::search::{a_star, AStarNode};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-struct LocationTime {
-    location: (i32, i32),
+pub struct LocationTime {
+    pub location: (i32, i32),
     time: i32,
 }
 
 #[derive(Debug)]
-struct Grid {
+pub struct Grid {
     width: i32,
     height: i32,
     obstacles: Vec<LocationTime>,
@@ -81,6 +81,13 @@ impl AStarNode for PathFindingNode<'_> {
         }
         expanded
     }
+}
+
+pub fn find_shortest_path(grid: Grid, start: LocationTime) -> Option<Vec<LocationTime>> {
+    let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
+    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
+    let path = a_star(start_node).expect("No path found");
+    Some(path.iter().map(|node| node.loc_time).collect())
 }
 
 mod tests;
