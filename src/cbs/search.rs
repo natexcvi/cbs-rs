@@ -45,7 +45,21 @@ impl<'a, T: AStarNode + Clone> Ord for HeapNode<T> {
     }
 }
 
-pub fn a_star<T: AStarNode + Clone>(start: T) -> Result<T, SearchError> {
+fn reconstruct_path<T: AStarNode + Clone>(mut current: Rc<HeapNode<T>>) -> Vec<T> {
+    let mut path = Vec::<T>::new();
+    loop {
+        path.push(current.node.clone());
+        if let Some(prev) = &current.prev {
+            current = Rc::clone(prev);
+        } else {
+            break;
+        }
+    }
+    path.reverse();
+    path
+}
+
+pub fn a_star<T: AStarNode + Clone>(start: T) -> Result<Vec<T>, SearchError> {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
     frontier.push(Reverse(HeapNode {
         node: start,
@@ -58,7 +72,7 @@ pub fn a_star<T: AStarNode + Clone>(start: T) -> Result<T, SearchError> {
         let Reverse(current) = frontier.pop().expect("failed to pop from heap");
         let current = Rc::new(current);
         if current.node.h() == 0.0 {
-            return Ok(current.node.clone());
+            return Ok(reconstruct_path(current));
         }
         for neighbor in current.node.expand() {
             frontier.push(Reverse(HeapNode {
