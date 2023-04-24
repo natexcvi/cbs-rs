@@ -44,6 +44,7 @@ pub struct ConflictTreeNode<'a> {
     constraints: Vec<Box<Constraint<'a>>>,
     agents: Vec<&'a Agent>,
     paths: HashMap<&'a Agent, Path>,
+    conflicts: Vec<Box<Conflict<'a>>>,
 }
 
 impl<'a> ConflictTreeNode<'a> {
@@ -56,12 +57,14 @@ impl<'a> ConflictTreeNode<'a> {
             constraints,
             agents,
             paths: precomputed_paths,
+            conflicts: Vec::<Box<Conflict>>::new(),
         };
-        ctn.calculate_paths();
+        ctn.compute_paths();
+        ctn.compute_conflicts();
         ctn
     }
 
-    fn conflicts(&self) -> Vec<Box<Conflict>> {
+    fn compute_conflicts(&mut self) {
         let mut conflicts = Vec::<Box<Conflict>>::new();
         let mut agent_locations = HashMap::<(i32, i32), Vec<&Agent>>::new();
         for i in 0..self.paths.values().map(|p| p.len()).max().unwrap() {
@@ -79,21 +82,24 @@ impl<'a> ConflictTreeNode<'a> {
                         if agent2 == agent {
                             continue;
                         }
-                        if i == 0 {
+                        if i > 0
+                            && i < self.paths[agent2].len()
+                            && self.paths[agent2][i] == self.paths[agent][i - 1]
+                        {
                             // TODO: fix condition
-                            conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
-                                agent1: agent,
-                                agent2: agent2,
-                                time: i as i32,
-                                location,
-                            })));
-                        } else {
                             conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
                                 agent1: agent,
                                 agent2: agent2,
                                 time: i as i32,
                                 location1: self.paths[agent][i - 1],
                                 location2: location,
+                            })));
+                        } else {
+                            conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
+                                agent1: agent,
+                                agent2: agent2,
+                                time: i as i32,
+                                location,
                             })));
                         }
                     }
@@ -106,11 +112,14 @@ impl<'a> ConflictTreeNode<'a> {
                 }
             }
         }
-        conflicts
+        self.conflicts.append(&mut conflicts);
     }
 
-    fn calculate_paths(&mut self) {
+    fn compute_paths(&mut self) {
         for agent in self.agents.iter() {
+            if self.paths.contains_key(agent) {
+                continue;
+            }
             let path = find_shortest_path(
                 Grid {
                     width: 10,
@@ -143,16 +152,15 @@ impl<'a> AStarNode<'a> for ConflictTreeNode<'a> {
     }
 
     fn h(&'a self) -> f64 {
-        self.conflicts().len() as f64
+        self.conflicts.len() as f64
     }
 
     fn expand(&'a self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
-        let conflicts = self.conflicts();
-        if conflicts.is_empty() {
+        if self.conflicts.is_empty() {
             return expanded;
         }
-        let conflict = &*conflicts[0];
+        let conflict = &*self.conflicts[0]; // TODO: pick conflict
         match conflict {
             Conflict::Vertex(vc) => {
                 for agent in vec![vc.agent1, vc.agent2] {
