@@ -49,6 +49,7 @@ pub struct ConflictTreeNode<'a> {
     agents: Vec<&'a Agent>,
     paths: HashMap<&'a Agent, Path>,
     conflicts: Vec<Box<Conflict<'a>>>,
+    scenario: &'a Grid,
 }
 
 impl<'a> ConflictTreeNode<'a> {
@@ -56,12 +57,14 @@ impl<'a> ConflictTreeNode<'a> {
         agents: Vec<&'a Agent>,
         constraints: Vec<Box<Constraint<'a>>>,
         precomputed_paths: HashMap<&'a Agent, Vec<(i32, i32)>>,
+        scenario: &'a Grid,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
             agents,
             paths: precomputed_paths,
             conflicts: Vec::<Box<Conflict>>::new(),
+            scenario,
         };
         ctn.compute_paths();
         ctn.compute_conflicts();
@@ -125,19 +128,21 @@ impl<'a> ConflictTreeNode<'a> {
             if self.paths.contains_key(agent) {
                 continue;
             }
+            let mut obstacles: Vec<LocationTime> = self
+                .constraints
+                .iter()
+                .filter(|c| c.agent == *agent)
+                .map(|c| LocationTime {
+                    location: c.location,
+                    time: c.time,
+                })
+                .collect();
+            obstacles.append(&mut self.scenario.obstacles.clone());
             let path = find_shortest_path(
                 Grid {
-                    width: 10,
-                    height: 10,
-                    obstacles: self
-                        .constraints
-                        .iter()
-                        .filter(|c| c.agent == *agent)
-                        .map(|c| LocationTime {
-                            location: c.location,
-                            time: c.time,
-                        })
-                        .collect(),
+                    width: self.scenario.width,
+                    height: self.scenario.height,
+                    obstacles,
                     goal: agent.goal,
                 },
                 LocationTime {
@@ -186,6 +191,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.agents.clone(),
                         new_constraints,
                         new_paths,
+                        self.scenario,
                     )));
                 }
             }
@@ -208,6 +214,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.agents.clone(),
                         new_constraints,
                         self.paths.clone(),
+                        self.scenario,
                     )));
                 }
             }
@@ -217,16 +224,16 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
 }
 
 pub struct CBS<'a> {
-    grid: &'a Grid,
+    scenario: &'a Grid,
     agents: Vec<&'a Agent>,
     high_level_expanded: usize,
     low_level_expanded: usize,
 }
 
 impl<'a> CBS<'a> {
-    pub fn new(grid: &'a Grid, agents: Vec<&'a Agent>) -> Self {
+    pub fn new(scenario: &'a Grid, agents: Vec<&'a Agent>) -> Self {
         CBS {
-            grid,
+            scenario,
             agents,
             high_level_expanded: 0,
             low_level_expanded: 0,
@@ -238,6 +245,7 @@ impl<'a> CBS<'a> {
             self.agents.clone(),
             Vec::<Box<Constraint>>::new(),
             HashMap::<&Agent, Vec<(i32, i32)>>::new(),
+            self.scenario,
         );
         let solution = a_star(root);
         match solution {
