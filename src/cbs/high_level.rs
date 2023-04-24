@@ -81,38 +81,42 @@ impl<'a> ConflictTreeNode<'a> {
                     .entry(location)
                     .or_insert(Vec::<&Agent>::new())
                     .push(agent);
-                if agent_locations[&location].len() > 1 {
-                    for agent2 in agent_locations[&location].iter() {
-                        if agent2 == agent {
-                            continue;
-                        }
-                        if i > 0
-                            && i < self.paths[agent2].len()
-                            && self.paths[agent2][i] == self.paths[agent][i - 1]
-                        {
-                            // TODO: fix condition
-                            conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
-                                agent1: agent,
-                                agent2: agent2,
-                                time: i as i32,
-                                location1: self.paths[agent][i - 1],
-                                location2: location,
-                            })));
-                        } else {
-                            conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
-                                agent1: agent,
-                                agent2: agent2,
-                                time: i as i32,
-                                location,
-                            })));
-                        }
-                    }
-                }
                 if i > 0 {
                     agent_locations
                         .entry(self.paths[agent][i - 1])
                         .or_default()
                         .retain(|a| a != agent);
+                }
+            }
+            for (location, agents) in agent_locations.iter() {
+                if agent_locations[&location].len() > 1 {
+                    for (j, agent) in agent_locations[&location].iter().enumerate() {
+                        for agent2 in agent_locations[&location][..j].iter() {
+                            if agent2 == agent {
+                                continue;
+                            }
+                            if i > 0
+                                && i < self.paths[agent2].len()
+                                && self.paths[agent2][i] == self.paths[agent][i - 1]
+                            {
+                                // TODO: fix condition
+                                conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
+                                    agent1: agent,
+                                    agent2: agent2,
+                                    time: i as i32,
+                                    location1: self.paths[agent][i - 1],
+                                    location2: location.clone(),
+                                })));
+                            } else {
+                                conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
+                                    agent1: agent,
+                                    agent2: agent2,
+                                    time: i as i32,
+                                    location: location.clone(),
+                                })));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -229,7 +233,7 @@ impl<'a> CBS<'a> {
     }
 
     pub fn find_solution(&self) -> Result<Vec<Vec<(i32, i32)>>, Box<dyn Error>> {
-        let mut root = ConflictTreeNode::new(
+        let root = ConflictTreeNode::new(
             self.agents.clone(),
             Vec::<Box<Constraint>>::new(),
             HashMap::<&Agent, Vec<(i32, i32)>>::new(),
@@ -254,7 +258,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn test_high_level() {
         let agents = vec![
             Agent {
@@ -264,8 +267,8 @@ mod tests {
             },
             Agent {
                 id: "b".to_string(),
-                start: (9, 0),
-                goal: (0, 9),
+                start: (0, 1),
+                goal: (9, 8),
             },
         ];
         let constraints = vec![
@@ -282,6 +285,10 @@ mod tests {
         ];
         let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();
         let ctn = ConflictTreeNode::new(agents.iter().collect(), constraints, precomputed_paths);
-        // TODO: add assertions
+        assert_eq!(ctn.conflicts.len(), 1);
+        let expanded = ctn.expand();
+        assert_eq!(expanded.len(), 2);
+        assert_eq!(expanded[0].constraints.len(), 3);
+        assert_eq!(expanded[1].constraints.len(), 3);
     }
 }
