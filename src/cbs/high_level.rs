@@ -164,10 +164,10 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         self.conflicts.is_empty()
     }
 
-    fn expand(&self) -> Vec<Box<Self>> {
+    fn expand(&self) -> Option<Vec<Box<Self>>> {
         let mut expanded = Vec::<Box<Self>>::new();
         if self.conflicts.is_empty() {
-            return expanded;
+            return Some(expanded);
         }
         let conflict = &*self.conflicts[0]; // TODO: pick conflict in a smarter way
         match conflict {
@@ -212,7 +212,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                 }
             }
         }
-        expanded
+        Some(expanded)
     }
 }
 

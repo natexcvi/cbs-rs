@@ -29,10 +29,14 @@ fn test_high_level() {
     let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();
     let ctn = ConflictTreeNode::new(agents.iter().collect(), constraints, precomputed_paths);
     assert_eq!(ctn.conflicts.len(), 1);
-    let expanded = ctn.expand();
-    assert_eq!(expanded.len(), 2);
-    assert_eq!(expanded[0].constraints.len(), 3);
-    assert_eq!(expanded[1].constraints.len(), 3);
-    assert_eq!(expanded[0].constraints[2].time, 17);
-    assert_eq!(expanded[0].conflicts.len(), 0);
+    match ctn.expand() {
+        Some(expanded) => {
+            assert_eq!(expanded.len(), 2);
+            assert_eq!(expanded[0].constraints.len(), 3);
+            assert_eq!(expanded[1].constraints.len(), 3);
+            assert_eq!(expanded[0].constraints[2].time, 17);
+            assert_eq!(expanded[0].conflicts.len(), 0);
+        }
+        None => panic!("No expanded nodes"),
+    }
 }

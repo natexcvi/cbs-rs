@@ -46,7 +46,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
         self.loc_time.location == self.grid.goal
     }
 
-    fn expand(&self) -> Vec<Box<Self>> {
+    fn expand(&self) -> Option<Vec<Box<Self>>> {
         let mut expanded = Vec::<Box<Self>>::new();
         let mut neigbours: Vec<LocationTime> = vec![
             // move left
@@ -92,7 +92,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                 self.grid,
             )));
         }
-        expanded
+        Some(expanded)
     }
 }
 

@@ -21,8 +21,8 @@ impl AStarNode<'_> for TestNode {
         self.h == 0.0
     }
 
-    fn expand(&self) -> Vec<Box<Self>> {
-        self.expand.iter().map(|x| x.clone()).collect()
+    fn expand(&self) -> Option<Vec<Box<Self>>> {
+        Some(self.expand.iter().map(|x| x.clone()).collect())
     }
 }
 

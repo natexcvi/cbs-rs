@@ -6,7 +6,7 @@ use std::rc::Rc;
 pub trait AStarNode<'a> {
     fn g(&'a self) -> f64;
     fn h(&'a self) -> f64;
-    fn expand(&'a self) -> Vec<Box<Self>>;
+    fn expand(&'a self) -> Option<Vec<Box<Self>>>;
     fn is_goal(&'a self) -> bool;
 }
 
@@ -108,11 +108,22 @@ where
         if current.node.is_goal() {
             return Ok(reconstruct_path(current));
         }
-        for neighbor in current.node.expand() {
-            frontier.push(Reverse(HeapNode {
-                node: *neighbor,
-                prev: Some(Rc::clone(&current)),
-            }));
+        match current.node.expand() {
+            Some(expand) => {
+                for neighbor in expand {
+                    frontier.push(Reverse(HeapNode {
+                        node: *neighbor,
+                        prev: Some(Rc::clone(&current)),
+                    }));
+                }
+            }
+            None => frontier.push(Reverse(HeapNode {
+                node: current.node.clone(),
+                prev: match &current.prev {
+                    Some(prev) => Some(Rc::clone(prev)),
+                    None => None,
+                },
+            })),
         }
     }
 }
