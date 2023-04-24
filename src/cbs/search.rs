@@ -7,6 +7,7 @@ pub trait AStarNode<'a> {
     fn g(&'a self) -> f64;
     fn h(&'a self) -> f64;
     fn expand(&'a self) -> Vec<Box<Self>>;
+    fn is_goal(&'a self) -> bool;
 }
 
 #[derive(Debug)]
@@ -104,7 +105,7 @@ where
         }
         let Reverse(current) = frontier.pop().expect("failed to pop from heap");
         let current = Rc::new(current);
-        if current.node.h() == 0.0 {
+        if current.node.is_goal() {
             return Ok(reconstruct_path(current));
         }
         for neighbor in current.node.expand() {

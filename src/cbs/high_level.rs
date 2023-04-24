@@ -2,7 +2,7 @@ use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::{a_star, AStarNode, SearchError},
 };
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, hash::Hash};
 
 #[derive(Clone)]
 struct VertexConflict<'a> {
@@ -160,6 +160,10 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         0.0 // TODO: more useful heuristic
     }
 
+    fn is_goal(&self) -> bool {
+        self.conflicts.is_empty()
+    }
+
     fn expand(&self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
         if self.conflicts.is_empty() {
@@ -229,7 +233,7 @@ impl<'a> CBS<'a> {
         }
     }
 
-    pub fn find_solution(&self) -> Result<Vec<Vec<(i32, i32)>>, Box<dyn Error>> {
+    pub fn solve(&self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
         let root = ConflictTreeNode::new(
             self.agents.clone(),
             Vec::<Box<Constraint>>::new(),
@@ -239,9 +243,9 @@ impl<'a> CBS<'a> {
         match solution {
             Ok(path) => {
                 let last_node = path.last().unwrap();
-                let mut paths = Vec::<Vec<(i32, i32)>>::new();
+                let mut paths = HashMap::<&Agent, Path>::new();
                 for agent in self.agents.iter() {
-                    paths.push(last_node.paths[agent].clone());
+                    paths.insert(agent, last_node.paths[agent].clone());
                 }
                 Ok(paths)
             }

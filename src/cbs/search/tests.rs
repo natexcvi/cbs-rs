@@ -17,6 +17,10 @@ impl AStarNode<'_> for TestNode {
         self.h
     }
 
+    fn is_goal(&self) -> bool {
+        self.h == 0.0
+    }
+
     fn expand(&self) -> Vec<Box<Self>> {
         self.expand.iter().map(|x| x.clone()).collect()
     }

@@ -42,6 +42,10 @@ impl AStarNode<'_> for PathFindingNode<'_> {
         self.h
     }
 
+    fn is_goal(&self) -> bool {
+        self.loc_time.location == self.grid.goal
+    }
+
     fn expand(&self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
         let mut neigbours: Vec<LocationTime> = vec![
