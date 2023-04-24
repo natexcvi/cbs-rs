@@ -1,9 +1,10 @@
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
-    search::AStarNode,
+    search::{a_star, AStarNode, SearchError},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
+#[derive(Clone)]
 struct VertexConflict<'a> {
     agent1: &'a Agent,
     agent2: &'a Agent,
@@ -11,6 +12,7 @@ struct VertexConflict<'a> {
     location: (i32, i32),
 }
 
+#[derive(Clone)]
 struct EdgeConflict<'a> {
     agent1: &'a Agent,
     agent2: &'a Agent,
@@ -19,6 +21,7 @@ struct EdgeConflict<'a> {
     location2: (i32, i32),
 }
 
+#[derive(Clone)]
 pub enum Conflict<'a> {
     Vertex(VertexConflict<'a>),
     Edge(EdgeConflict<'a>),
@@ -40,6 +43,7 @@ pub struct Agent {
     goal: (i32, i32),
 }
 
+#[derive(Clone)]
 pub struct ConflictTreeNode<'a> {
     constraints: Vec<Box<Constraint<'a>>>,
     agents: Vec<&'a Agent>,
@@ -146,21 +150,21 @@ impl<'a> ConflictTreeNode<'a> {
     }
 }
 
-impl<'a> AStarNode<'a> for ConflictTreeNode<'a> {
-    fn g(&'a self) -> f64 {
-        self.constraints.len() as f64
+impl AStarNode<'_> for ConflictTreeNode<'_> {
+    fn g(&self) -> f64 {
+        self.paths.values().map(|p| p.len() as f64).sum()
     }
 
-    fn h(&'a self) -> f64 {
-        self.conflicts.len() as f64
+    fn h(&self) -> f64 {
+        0.0 // TODO: more useful heuristic
     }
 
-    fn expand(&'a self) -> Vec<Box<Self>> {
+    fn expand(&self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
         if self.conflicts.is_empty() {
             return expanded;
         }
-        let conflict = &*self.conflicts[0]; // TODO: pick conflict
+        let conflict = &*self.conflicts[0]; // TODO: pick conflict in a smarter way
         match conflict {
             Conflict::Vertex(vc) => {
                 for agent in vec![vc.agent1, vc.agent2] {
@@ -204,5 +208,80 @@ impl<'a> AStarNode<'a> for ConflictTreeNode<'a> {
             }
         }
         expanded
+    }
+}
+
+pub struct CBS<'a> {
+    grid: &'a Grid,
+    agents: Vec<&'a Agent>,
+    high_level_expanded: usize,
+    low_level_expanded: usize,
+}
+
+impl<'a> CBS<'a> {
+    pub fn new(grid: &'a Grid, agents: Vec<&'a Agent>) -> Self {
+        CBS {
+            grid,
+            agents,
+            high_level_expanded: 0,
+            low_level_expanded: 0,
+        }
+    }
+
+    pub fn find_solution(&self) -> Result<Vec<Vec<(i32, i32)>>, Box<dyn Error>> {
+        let mut root = ConflictTreeNode::new(
+            self.agents.clone(),
+            Vec::<Box<Constraint>>::new(),
+            HashMap::<&Agent, Vec<(i32, i32)>>::new(),
+        );
+        let solution = a_star(root);
+        match solution {
+            Ok(path) => {
+                let last_node = path.last().unwrap();
+                let mut paths = Vec::<Vec<(i32, i32)>>::new();
+                for agent in self.agents.iter() {
+                    paths.push(last_node.paths[agent].clone());
+                }
+                Ok(paths)
+            }
+            Err(error) => Err(Box::new(error)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn test_high_level() {
+        let agents = vec![
+            Agent {
+                id: "a".to_string(),
+                start: (0, 0),
+                goal: (9, 9),
+            },
+            Agent {
+                id: "b".to_string(),
+                start: (9, 0),
+                goal: (0, 9),
+            },
+        ];
+        let constraints = vec![
+            Box::new(Constraint {
+                agent: &agents[0],
+                time: 0,
+                location: (1, 0),
+            }),
+            Box::new(Constraint {
+                agent: &agents[1],
+                time: 0,
+                location: (8, 0),
+            }),
+        ];
+        let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();
+        let ctn = ConflictTreeNode::new(agents.iter().collect(), constraints, precomputed_paths);
+        // TODO: add assertions
     }
 }

@@ -45,20 +45,29 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     fn expand(&self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
         let mut neigbours: Vec<LocationTime> = vec![
+            // move left
             LocationTime {
                 location: (self.loc_time.location.0 - 1, self.loc_time.location.1),
                 time: self.loc_time.time + 1,
             },
+            // move right
             LocationTime {
                 location: (self.loc_time.location.0 + 1, self.loc_time.location.1),
                 time: self.loc_time.time + 1,
             },
+            // move down
             LocationTime {
                 location: (self.loc_time.location.0, self.loc_time.location.1 - 1),
                 time: self.loc_time.time + 1,
             },
+            // move up
             LocationTime {
                 location: (self.loc_time.location.0, self.loc_time.location.1 + 1),
+                time: self.loc_time.time + 1,
+            },
+            // wait
+            LocationTime {
+                location: self.loc_time.location,
                 time: self.loc_time.time + 1,
             },
         ];

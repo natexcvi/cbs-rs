@@ -1,5 +1,6 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::error::Error;
 use std::rc::Rc;
 
 pub trait AStarNode<'a> {
@@ -13,6 +14,17 @@ pub enum SearchError {
     InvalidArguments(String),
     NotFound,
 }
+
+impl std::fmt::Display for SearchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            SearchError::InvalidArguments(s) => write!(f, "Invalid arguments: {}", s),
+            SearchError::NotFound => write!(f, "Not found"),
+        }
+    }
+}
+
+impl Error for SearchError {}
 
 struct HeapNode<T>
 where
