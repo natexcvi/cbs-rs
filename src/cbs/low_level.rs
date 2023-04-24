@@ -33,7 +33,7 @@ impl<'a> PathFindingNode<'a> {
     }
 }
 
-impl AStarNode for PathFindingNode<'_> {
+impl AStarNode<'_> for PathFindingNode<'_> {
     fn g(&self) -> f64 {
         self.g
     }

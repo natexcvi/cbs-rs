@@ -50,7 +50,7 @@ impl<'a> ConflictTreeNode<'a> {
     fn new(
         agents: Vec<&'a Agent>,
         constraints: Vec<Box<Constraint<'a>>>,
-        precomputed_paths: HashMap<&Agent, Vec<(i32, i32)>>,
+        precomputed_paths: HashMap<&'a Agent, Vec<(i32, i32)>>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -70,16 +70,33 @@ impl<'a> ConflictTreeNode<'a> {
                     continue;
                 }
                 let location = self.paths[agent][i];
-                let cur_loc = agent_locations.entry(location);
-                cur_loc.or_insert(Vec::<&Agent>::new()).push(agent);
-                if cur_loc.or_default().len() > 1 {
-                    let conflict = Box::new(Conflict::Vertex(VertexConflict {
-                        agent1: cur_loc.or_default()[0],
-                        agent2: cur_loc.or_default()[1],
-                        time: i as i32,
-                        location,
-                    }));
-                    conflicts.push(conflict);
+                agent_locations
+                    .entry(location)
+                    .or_insert(Vec::<&Agent>::new())
+                    .push(agent);
+                if agent_locations[&location].len() > 1 {
+                    for agent2 in agent_locations[&location].iter() {
+                        if agent2 == agent {
+                            continue;
+                        }
+                        if i == 0 {
+                            // TODO: fix condition
+                            conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
+                                agent1: agent,
+                                agent2: agent2,
+                                time: i as i32,
+                                location,
+                            })));
+                        } else {
+                            conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
+                                agent1: agent,
+                                agent2: agent2,
+                                time: i as i32,
+                                location1: self.paths[agent][i - 1],
+                                location2: location,
+                            })));
+                        }
+                    }
                 }
                 if i > 0 {
                     agent_locations
@@ -120,16 +137,16 @@ impl<'a> ConflictTreeNode<'a> {
     }
 }
 
-impl AStarNode for ConflictTreeNode<'_> {
-    fn g(&self) -> f64 {
+impl<'a> AStarNode<'a> for ConflictTreeNode<'a> {
+    fn g(&'a self) -> f64 {
         self.constraints.len() as f64
     }
 
-    fn h(&self) -> f64 {
+    fn h(&'a self) -> f64 {
         self.conflicts().len() as f64
     }
 
-    fn expand(&self) -> Vec<Box<Self>> {
+    fn expand(&'a self) -> Vec<Box<Self>> {
         let mut expanded = Vec::<Box<Self>>::new();
         let conflicts = self.conflicts();
         if conflicts.is_empty() {
@@ -173,6 +190,7 @@ impl AStarNode for ConflictTreeNode<'_> {
                     expanded.push(Box::new(ConflictTreeNode::new(
                         self.agents.clone(),
                         new_constraints,
+                        self.paths.clone(),
                     )));
                 }
             }

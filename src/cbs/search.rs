@@ -2,10 +2,10 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::rc::Rc;
 
-pub trait AStarNode {
-    fn g(&self) -> f64;
-    fn h(&self) -> f64;
-    fn expand(&self) -> Vec<Box<Self>>;
+pub trait AStarNode<'a> {
+    fn g(&'a self) -> f64;
+    fn h(&'a self) -> f64;
+    fn expand(&'a self) -> Vec<Box<Self>>;
 }
 
 #[derive(Debug)]
@@ -14,38 +14,56 @@ pub enum SearchError {
     NotFound,
 }
 
-struct HeapNode<T: AStarNode + Clone> {
+struct HeapNode<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     node: T,
     prev: Option<Rc<HeapNode<T>>>,
 }
 
-impl<'a, T: AStarNode + Clone> HeapNode<T> {
+impl<T> HeapNode<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     fn new(node: T) -> HeapNode<T> {
         HeapNode { node, prev: None }
     }
 }
 
-impl<'a, T: AStarNode + Clone> PartialEq for HeapNode<T> {
+impl<T> PartialEq for HeapNode<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     fn eq(&self, other: &Self) -> bool {
         self.node.g() == other.node.g()
     }
 }
 
-impl<'a, T: AStarNode + Clone> PartialOrd for HeapNode<T> {
+impl<T> PartialOrd for HeapNode<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         (self.node.g() + self.node.h()).partial_cmp(&(other.node.g() + other.node.h()))
     }
 }
 
-impl<'a, T: AStarNode + Clone> Eq for HeapNode<T> {}
+impl<T> Eq for HeapNode<T> where for<'a> T: AStarNode<'a> + Clone {}
 
-impl<'a, T: AStarNode + Clone> Ord for HeapNode<T> {
+impl<T> Ord for HeapNode<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         (self.node.g() + self.node.h()).total_cmp(&(other.node.g() + other.node.h()))
     }
 }
 
-fn reconstruct_path<T: AStarNode + Clone>(mut current: Rc<HeapNode<T>>) -> Vec<T> {
+fn reconstruct_path<T>(mut current: Rc<HeapNode<T>>) -> Vec<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     let mut path = Vec::<T>::new();
     loop {
         path.push(current.node.clone());
@@ -59,7 +77,10 @@ fn reconstruct_path<T: AStarNode + Clone>(mut current: Rc<HeapNode<T>>) -> Vec<T
     path
 }
 
-pub fn a_star<T: AStarNode + Clone>(start: T) -> Result<Vec<T>, SearchError> {
+pub fn a_star<T>(start: T) -> Result<Vec<T>, SearchError>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
     frontier.push(Reverse(HeapNode {
         node: start,

@@ -8,7 +8,7 @@ struct TestNode {
     expand: Vec<Box<TestNode>>,
 }
 
-impl AStarNode for TestNode {
+impl AStarNode<'_> for TestNode {
     fn g(&self) -> f64 {
         self.score
     }
