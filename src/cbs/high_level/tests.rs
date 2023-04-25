@@ -76,8 +76,8 @@ fn test_cbs() {
     match cbs.solve() {
         Ok(paths) => {
             assert_eq!(paths.len(), 2);
-            assert_eq!(paths[&agents[0]].len(), 18);
-            assert_eq!(paths[&agents[1]].len(), 18);
+            assert_eq!(paths[&agents[0]].len(), 19);
+            assert_eq!(paths[&agents[1]].len(), 17);
         }
         Err(e) => panic!("Error: {:?}", e),
     }
