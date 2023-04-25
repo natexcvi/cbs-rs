@@ -51,8 +51,11 @@ fn test_path_finding() {
     };
     let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
     let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
-    let path = a_star(start_node).expect("No path found");
-    assert_eq!(path[path.len() - 1].loc_time.location, (4, 4));
-    assert_eq!(path[path.len() - 1].loc_time.time, 8);
-    assert_eq!(path.len(), 9);
+    let solution = a_star(start_node).expect("No path found");
+    assert_eq!(
+        solution.path[solution.path.len() - 1].loc_time.location,
+        (4, 4)
+    );
+    assert_eq!(solution.path[solution.path.len() - 1].loc_time.time, 8);
+    assert_eq!(solution.path.len(), 9);
 }

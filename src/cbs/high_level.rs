@@ -240,7 +240,7 @@ impl<'a> CBS<'a> {
         }
     }
 
-    pub fn solve(&self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
+    pub fn solve(&mut self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
         let root = ConflictTreeNode::new(
             self.agents.clone(),
             Vec::<Box<Constraint>>::new(),
@@ -249,8 +249,9 @@ impl<'a> CBS<'a> {
         );
         let solution = a_star(root);
         match solution {
-            Ok(path) => {
-                let last_node = path.last().unwrap();
+            Ok(solution) => {
+                self.high_level_expanded += solution.nodes_expanded as usize;
+                let last_node = solution.path.last().unwrap();
                 let mut paths = HashMap::<&Agent, Path>::new();
                 for agent in self.agents.iter() {
                     paths.insert(agent, last_node.paths[agent].clone());

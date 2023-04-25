@@ -72,7 +72,7 @@ fn test_cbs() {
         obstacles: vec![],
         goal: (9, 9),
     };
-    let cbs = CBS::new(&grid, agents.iter().collect());
+    let mut cbs = CBS::new(&grid, agents.iter().collect());
     match cbs.solve() {
         Ok(paths) => {
             assert_eq!(paths.len(), 2);

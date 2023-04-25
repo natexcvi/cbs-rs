@@ -73,6 +73,14 @@ where
     }
 }
 
+pub struct AStarSolution<T>
+where
+    for<'a> T: AStarNode<'a> + Clone,
+{
+    pub path: Vec<T>,
+    pub nodes_expanded: i32,
+}
+
 fn reconstruct_path<T>(mut current: Rc<HeapNode<T>>) -> Vec<T>
 where
     for<'a> T: AStarNode<'a> + Clone,
@@ -90,11 +98,12 @@ where
     path
 }
 
-pub fn a_star<T>(start: T) -> Result<Vec<T>, SearchError>
+pub fn a_star<T>(start: T) -> Result<AStarSolution<T>, SearchError>
 where
     for<'a> T: AStarNode<'a> + Clone,
 {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
+    let mut nodes_expanded = 0;
     frontier.push(Reverse(HeapNode {
         node: start,
         prev: None,
@@ -106,7 +115,10 @@ where
         let Reverse(current) = frontier.pop().expect("failed to pop from heap");
         let current = Rc::new(current);
         if current.node.is_goal() {
-            return Ok(reconstruct_path(current));
+            return Ok(AStarSolution {
+                path: reconstruct_path(current),
+                nodes_expanded,
+            });
         }
         match current.node.expand() {
             Some(expand) => {

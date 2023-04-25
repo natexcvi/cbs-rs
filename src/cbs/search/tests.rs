@@ -63,8 +63,8 @@ fn test_a_star() {
     b.expand.push(Box::new(c));
     a.expand.push(Box::new(b));
     let result = a_star(a).unwrap();
-    assert_eq!(result[result.len() - 1].id, "d");
-    assert_eq!(result[result.len() - 2].id, "c");
-    assert_eq!(result[result.len() - 3].id, "b");
-    assert_eq!(result[result.len() - 4].id, "a");
+    assert_eq!(result.path[result.path.len() - 1].id, "d");
+    assert_eq!(result.path[result.path.len() - 2].id, "c");
+    assert_eq!(result.path[result.path.len() - 3].id, "b");
+    assert_eq!(result.path[result.path.len() - 4].id, "a");
 }
