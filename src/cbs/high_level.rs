@@ -50,6 +50,8 @@ pub struct ConflictTreeNode<'a> {
     paths: HashMap<&'a Agent, Path>,
     conflicts: Vec<Box<Conflict<'a>>>,
     scenario: &'a Grid,
+    conflict_picker: fn(&Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
+    post_expanded_callback: fn(Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
 }
 
 impl<'a> ConflictTreeNode<'a> {
@@ -65,6 +67,8 @@ impl<'a> ConflictTreeNode<'a> {
             paths: precomputed_paths,
             conflicts: Vec::<Box<Conflict>>::new(),
             scenario,
+            conflict_picker: |conflicts| Some(conflicts[0].clone()), // TODO: replace with a better picker
+            post_expanded_callback: |expanded| Some(expanded), // TODO: replace with optimization
         };
         ctn.compute_paths();
         ctn.compute_conflicts();
@@ -174,8 +178,8 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         if self.conflicts.is_empty() {
             return Some(expanded);
         }
-        let conflict = &*self.conflicts[0]; // TODO: pick conflict in a smarter way
-        match conflict {
+        let conflict = (self.conflict_picker)(&self.conflicts)?;
+        match *conflict {
             Conflict::Vertex(vc) => {
                 for agent in vec![vc.agent1, vc.agent2] {
                     let constraint = Constraint {
@@ -219,7 +223,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                 }
             }
         }
-        Some(expanded)
+        (self.post_expanded_callback)(expanded)
     }
 }
 
