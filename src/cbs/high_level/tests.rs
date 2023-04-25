@@ -132,6 +132,23 @@ fn test_high_level() {
     obstacles: vec![LocationTime { location: (1,1), time: 2 }],
     goal: (0, 0),
 }, vec![5, 2, 3])]
+#[case::must_wait(vec![
+    Agent {
+        id: "a".to_string(),
+        start: (0, 1),
+        goal: (2, 1),
+    },
+    Agent {
+        id: "b".to_string(),
+        start: (1, 0),
+        goal: (1, 2),
+    },
+], Grid {
+    width: 3,
+    height: 3,
+    obstacles: vec![LocationTime { location: (2,0), time: 1 }, LocationTime { location: (0,2), time: 1 }],
+    goal: (0, 0),
+}, vec![3, 4])]
 fn test_cbs(#[case] agents: Vec<Agent>, #[case] grid: Grid, #[case] exp_path_lengths: Vec<usize>) {
     let mut cbs = CBS::new(&grid, agents.iter().collect());
     match cbs.solve() {

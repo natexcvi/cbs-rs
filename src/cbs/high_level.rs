@@ -2,7 +2,7 @@ use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::{a_star, AStarNode},
 };
-use std::{collections::HashMap, error::Error, hash::Hash};
+use std::{collections::HashMap, error::Error, fmt, hash::Hash};
 
 #[derive(Clone)]
 pub struct VertexConflict<'a> {
@@ -227,11 +227,27 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
     }
 }
 
+#[derive(Debug)]
+pub enum CBSError {
+    AlreadySolved,
+}
+
+impl fmt::Display for CBSError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CBSError::AlreadySolved => write!(f, "CBS instance already solved"),
+        }
+    }
+}
+
+impl Error for CBSError {}
+
 pub struct CBS<'a> {
     scenario: &'a Grid,
     agents: Vec<&'a Agent>,
-    high_level_expanded: usize,
-    low_level_expanded: usize,
+    solved: bool,
+    pub high_level_expanded: usize,
+    pub low_level_expanded: usize,
 }
 
 impl<'a> CBS<'a> {
@@ -241,10 +257,14 @@ impl<'a> CBS<'a> {
             agents,
             high_level_expanded: 0,
             low_level_expanded: 0,
+            solved: false,
         }
     }
 
     pub fn solve(&mut self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
+        if self.solved {
+            return Err(Box::new(CBSError::AlreadySolved));
+        }
         let root = ConflictTreeNode::new(
             self.agents.clone(),
             Vec::<Box<Constraint>>::new(),
@@ -252,6 +272,7 @@ impl<'a> CBS<'a> {
             self.scenario,
         );
         let solution = a_star(root);
+        self.solved = true;
         match solution {
             Ok(solution) => {
                 self.high_level_expanded += solution.nodes_expanded as usize;
