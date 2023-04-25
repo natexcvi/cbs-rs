@@ -1,11 +1,11 @@
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
-    search::{a_star, AStarNode, SearchError},
+    search::{a_star, AStarNode},
 };
 use std::{collections::HashMap, error::Error, hash::Hash};
 
 #[derive(Clone)]
-struct VertexConflict<'a> {
+pub struct VertexConflict<'a> {
     agent1: &'a Agent,
     agent2: &'a Agent,
     time: i32,
@@ -13,7 +13,7 @@ struct VertexConflict<'a> {
 }
 
 #[derive(Clone)]
-struct EdgeConflict<'a> {
+pub struct EdgeConflict<'a> {
     agent1: &'a Agent,
     agent2: &'a Agent,
     time: i32,
@@ -92,9 +92,9 @@ impl<'a> ConflictTreeNode<'a> {
                 }
             }
             for (location, agents) in agent_locations.iter() {
-                if agent_locations[&location].len() > 1 {
-                    for (j, agent) in agent_locations[&location].iter().enumerate() {
-                        for agent2 in agent_locations[&location][..j].iter() {
+                if agents.len() > 1 {
+                    for (j, agent) in agents.iter().enumerate() {
+                        for agent2 in agents[..j].iter() {
                             if i > 0
                                 && i < self.paths[agent2].len()
                                 && self.paths[agent2][i] == self.paths[agent][i - 1]
