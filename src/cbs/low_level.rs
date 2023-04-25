@@ -1,9 +1,16 @@
 use super::search::{a_star, AStarNode};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Eq, Hash, Clone, Copy)]
 pub struct LocationTime {
     pub location: (i32, i32),
     pub time: i32,
+}
+
+impl PartialEq for LocationTime {
+    fn eq(&self, other: &Self) -> bool {
+        self.location == other.location
+            && (self.time == other.time || self.time == -1 || other.time == -1)
+    }
 }
 
 #[derive(Debug)]

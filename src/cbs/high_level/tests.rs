@@ -146,7 +146,7 @@ fn test_high_level() {
 ], Grid {
     width: 3,
     height: 3,
-    obstacles: vec![LocationTime { location: (2,0), time: 1 }, LocationTime { location: (0,2), time: 1 }],
+    obstacles: vec![LocationTime { location: (2,0), time: -1 }, LocationTime { location: (0,2), time: -1 }],
     goal: (0, 0),
 }, vec![3, 4])]
 fn test_cbs(#[case] agents: Vec<Agent>, #[case] grid: Grid, #[case] exp_path_lengths: Vec<usize>) {
