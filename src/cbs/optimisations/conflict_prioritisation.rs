@@ -54,6 +54,13 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
         mdd.push(Vec::<(i32, i32)>::new());
     }
     let mut nodes = HashMap::<(i32, i32), MDDNode<(i32, i32)>>::new();
+    let goal_node = MDDNode {
+        location: agent.goal.clone(),
+        goal_reachable: true,
+        visited: false,
+        level: 0,
+    };
+    nodes.insert(agent.goal.clone(), goal_node);
     bfs(
         &mut nodes,
         agent.goal.clone(),
@@ -127,4 +134,31 @@ pub fn pick_conflict<'a>(conflicts: &Vec<Box<Conflict<'a>>>) -> Option<&'a Box<C
     let mut min_conflict = None;
     for conflict in conflicts {}
     min_conflict
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    #[rstest]
+    fn test_mdd() {
+        let scenario = crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0));
+        let agent = crate::cbs::high_level::Agent {
+            id: "a".to_string(),
+            start: (0, 0),
+            goal: (9, 9),
+        };
+        let mdd = super::mdd(&agent, &scenario, 10);
+        assert_eq!(mdd.len(), 10);
+        assert_eq!(mdd[0].len(), 1);
+        assert_eq!(mdd[1].len(), 4);
+        assert_eq!(mdd[2].len(), 4);
+        assert_eq!(mdd[3].len(), 4);
+        assert_eq!(mdd[4].len(), 4);
+        assert_eq!(mdd[5].len(), 4);
+        assert_eq!(mdd[6].len(), 4);
+        assert_eq!(mdd[7].len(), 4);
+        assert_eq!(mdd[8].len(), 4);
+        assert_eq!(mdd[9].len(), 1);
+    }
 }

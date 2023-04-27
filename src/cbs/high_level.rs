@@ -38,7 +38,7 @@ pub type Path = Vec<(i32, i32)>;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct Agent {
-    id: String,
+    pub id: String,
     pub start: (i32, i32),
     pub goal: (i32, i32),
 }
