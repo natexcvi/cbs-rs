@@ -21,6 +21,28 @@ pub struct Grid {
     pub goal: (i32, i32),
 }
 
+impl Grid {
+    pub fn new(width: i32, height: i32, obstacles: Vec<LocationTime>, goal: (i32, i32)) -> Grid {
+        Grid {
+            width,
+            height,
+            obstacles,
+            goal,
+        }
+    }
+
+    pub fn is_valid_location(&self, location: &(i32, i32)) -> bool {
+        location.0 >= 0
+            && location.0 < self.width
+            && location.1 >= 0
+            && location.1 < self.height
+            && !self.obstacles.contains(&LocationTime {
+                location: location.clone(),
+                time: -1,
+            })
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 struct PathFindingNode<'a> {
     loc_time: LocationTime,
