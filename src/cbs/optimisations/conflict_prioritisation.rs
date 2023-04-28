@@ -49,7 +49,12 @@ where
     }
 }
 
-fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
+#[derive(Debug)]
+enum MDDError {
+    GoalUnreachable,
+}
+
+fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, MDDError> {
     let mut mdd = Vec::<Vec<(i32, i32)>>::new();
     for _ in 0..c + 1 {
         mdd.push(Vec::<(i32, i32)>::new());
@@ -99,6 +104,9 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
             neighbours
         },
     );
+    if !nodes[&agent.start].goal_reachable {
+        return Err(MDDError::GoalUnreachable);
+    }
     bfs(
         &mut nodes,
         agent.start.clone(),
@@ -133,7 +141,7 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
         },
     );
 
-    mdd
+    Ok(mdd)
 }
 
 pub fn pick_conflict<'a>(conflicts: &Vec<Box<Conflict<'a>>>) -> Option<&'a Box<Conflict<'a>>> {
@@ -147,25 +155,52 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    fn test_mdd() {
-        let scenario = crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0));
+    #[case::simple(
+        crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
+        (0, 0),
+        (5, 5),
+        10,
+        Ok(vec![
+            vec![(0,0)],
+            vec![(1,0),(0,1)],
+            vec![(2,0),(1,1),(0,2)],
+            vec![(3,0),(2,1),(1,2),(0,3)],
+            vec![(4,0),(3,1),(2,2),(1,3),(0,4)],
+            vec![(5,0),(4,1),(3,2),(2,3),(1,4),(0,5)],
+            vec![(5,1), (4,2), (3,3), (2,4), (1,5)],
+            vec![(5,2), (4,3), (3,4), (2,5)],
+            vec![(5,3), (4,4), (3,5)],
+            vec![(5,4), (4,5)],
+            vec![(5,5)],
+        ])
+    )]
+    #[case::goal_unreachable_error(
+        crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
+        (0, 0),
+        (5, 6),
+        10,
+        Err(crate::cbs::optimisations::conflict_prioritisation::MDDError::GoalUnreachable),
+    )]
+    fn test_mdd(
+        #[case] scenario: crate::cbs::low_level::Grid,
+        #[case] start: (i32, i32),
+        #[case] goal: (i32, i32),
+        #[case] c: i32,
+        #[case] expected: Result<Vec<Vec<(i32, i32)>>, super::MDDError>,
+    ) {
         let agent = crate::cbs::high_level::Agent {
             id: "a".to_string(),
-            start: (0, 0),
-            goal: (5, 5),
+            start,
+            goal,
         };
-        let mdd = super::mdd(&agent, &scenario, 10);
-        assert_eq!(mdd.len(), 11);
-        assert_eq!(mdd[0].len(), 1);
-        assert_eq!(mdd[1].len(), 2);
-        assert_eq!(mdd[2].len(), 3);
-        assert_eq!(mdd[3].len(), 4);
-        assert_eq!(mdd[4].len(), 5);
-        assert_eq!(mdd[5].len(), 6);
-        assert_eq!(mdd[6].len(), 5);
-        assert_eq!(mdd[7].len(), 4);
-        assert_eq!(mdd[8].len(), 3);
-        assert_eq!(mdd[9].len(), 2);
-        assert_eq!(mdd[10].len(), 1);
+        let mdd = super::mdd(&agent, &scenario, c);
+        match mdd {
+            Ok(mdd) => {
+                assert_eq!(mdd, expected.unwrap());
+            }
+            Err(_) => {
+                assert!(expected.is_err());
+            }
+        }
     }
 }
