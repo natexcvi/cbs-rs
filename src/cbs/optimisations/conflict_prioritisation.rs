@@ -28,11 +28,12 @@ where
     let mut cur_depth = 0;
     let mut bfs_queue = VecDeque::<BFSNode<T>>::new();
     bfs_queue.push_back(BFSNode::Node(root));
+    bfs_queue.push_back(BFSNode::Divider);
     while !bfs_queue.is_empty() {
         let node = bfs_queue.pop_front().unwrap();
         match node {
             BFSNode::Node(node) => {
-                visit(nodes, node.clone(), depth);
+                visit(nodes, node.clone(), cur_depth);
                 for neighbour in expand(nodes, node) {
                     bfs_queue.push_back(BFSNode::Node(neighbour));
                 }
@@ -50,7 +51,7 @@ where
 
 fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
     let mut mdd = Vec::<Vec<(i32, i32)>>::new();
-    for _ in 0..c {
+    for _ in 0..c + 1 {
         mdd.push(Vec::<(i32, i32)>::new());
     }
     let mut nodes = HashMap::<(i32, i32), MDDNode<(i32, i32)>>::new();
@@ -67,7 +68,8 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
         c,
         |nodes, node, level| {
             let cur_node = nodes.get_mut(&node).unwrap();
-            cur_node.visited = true;
+
+            cur_node.goal_reachable = true;
             cur_node.level = level;
         },
         |nodes, node_location| {
@@ -103,8 +105,12 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
         c,
         |nodes, node, level| {
             let cur_node = nodes.get_mut(&node).unwrap();
-            if cur_node.goal_reachable {
-                mdd[cur_node.level as usize].push(node);
+            if cur_node.visited {
+                return;
+            }
+            cur_node.visited = true;
+            if cur_node.goal_reachable && cur_node.level + level <= c {
+                mdd[level as usize].push(node);
             }
         },
         |nodes, node_location| {
@@ -118,7 +124,7 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Vec<Vec<(i32, i32)>> {
             ];
             neighbouring_cells.retain(|cell| scenario.is_valid_location(cell));
             for neighbour in neighbouring_cells {
-                if !nodes.contains_key(&neighbour) {
+                if !nodes.contains_key(&neighbour) || nodes[&neighbour].visited {
                     continue;
                 }
                 neighbours.push(neighbour);
@@ -146,19 +152,20 @@ mod tests {
         let agent = crate::cbs::high_level::Agent {
             id: "a".to_string(),
             start: (0, 0),
-            goal: (9, 9),
+            goal: (5, 5),
         };
         let mdd = super::mdd(&agent, &scenario, 10);
-        assert_eq!(mdd.len(), 10);
+        assert_eq!(mdd.len(), 11);
         assert_eq!(mdd[0].len(), 1);
-        assert_eq!(mdd[1].len(), 4);
-        assert_eq!(mdd[2].len(), 4);
+        assert_eq!(mdd[1].len(), 2);
+        assert_eq!(mdd[2].len(), 3);
         assert_eq!(mdd[3].len(), 4);
-        assert_eq!(mdd[4].len(), 4);
-        assert_eq!(mdd[5].len(), 4);
-        assert_eq!(mdd[6].len(), 4);
+        assert_eq!(mdd[4].len(), 5);
+        assert_eq!(mdd[5].len(), 6);
+        assert_eq!(mdd[6].len(), 5);
         assert_eq!(mdd[7].len(), 4);
-        assert_eq!(mdd[8].len(), 4);
-        assert_eq!(mdd[9].len(), 1);
+        assert_eq!(mdd[8].len(), 3);
+        assert_eq!(mdd[9].len(), 2);
+        assert_eq!(mdd[10].len(), 1);
     }
 }
