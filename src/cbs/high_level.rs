@@ -48,7 +48,7 @@ pub struct Agent {
 pub struct ConflictTreeNode<'a> {
     constraints: Vec<Box<Constraint<'a>>>,
     agents: Vec<&'a Agent>,
-    paths: HashMap<&'a Agent, Path>,
+    pub paths: HashMap<&'a Agent, Path>,
     conflicts: Vec<Box<Conflict<'a>>>,
     scenario: &'a Grid,
     conflict_picker:
@@ -57,7 +57,7 @@ pub struct ConflictTreeNode<'a> {
 }
 
 impl<'a> ConflictTreeNode<'a> {
-    fn new(
+    pub fn new(
         agents: Vec<&'a Agent>,
         constraints: Vec<Box<Constraint<'a>>>,
         precomputed_paths: HashMap<&'a Agent, Vec<(i32, i32)>>,
@@ -231,67 +231,6 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             }
         }
         (self.post_expanded_callback)(expanded)
-    }
-}
-
-#[derive(Debug)]
-pub enum CBSError {
-    AlreadySolved,
-}
-
-impl fmt::Display for CBSError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CBSError::AlreadySolved => write!(f, "CBS instance already solved"),
-        }
-    }
-}
-
-impl Error for CBSError {}
-
-pub struct CBS<'a> {
-    scenario: &'a Grid,
-    agents: Vec<&'a Agent>,
-    solved: bool,
-    pub high_level_expanded: usize,
-    pub low_level_expanded: usize,
-}
-
-impl<'a> CBS<'a> {
-    pub fn new(scenario: &'a Grid, agents: Vec<&'a Agent>) -> Self {
-        CBS {
-            scenario,
-            agents,
-            high_level_expanded: 0,
-            low_level_expanded: 0,
-            solved: false,
-        }
-    }
-
-    pub fn solve(&mut self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
-        if self.solved {
-            return Err(Box::new(CBSError::AlreadySolved));
-        }
-        let root = ConflictTreeNode::new(
-            self.agents.clone(),
-            Vec::<Box<Constraint>>::new(),
-            HashMap::<&Agent, Vec<(i32, i32)>>::new(),
-            self.scenario,
-        );
-        let solution = a_star(root);
-        self.solved = true;
-        match solution {
-            Ok(solution) => {
-                self.high_level_expanded += solution.nodes_expanded as usize;
-                let last_node = solution.path.last().unwrap();
-                let mut paths = HashMap::<&Agent, Path>::new();
-                for agent in self.agents.iter() {
-                    paths.insert(agent, last_node.paths[agent].clone());
-                }
-                Ok(paths)
-            }
-            Err(error) => Err(Box::new(error)),
-        }
     }
 }
 

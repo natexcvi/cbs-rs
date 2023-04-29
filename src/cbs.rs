@@ -1,4 +1,76 @@
+use std::{collections::HashMap, error::Error, fmt};
+
+use self::{
+    high_level::{Agent, ConflictTreeNode, Constraint, Path},
+    low_level::Grid,
+    search::a_star,
+};
+
 mod high_level;
 mod low_level;
-pub mod search;
 mod optimisations;
+pub mod search;
+
+#[derive(Debug)]
+pub enum CBSError {
+    AlreadySolved,
+}
+
+impl fmt::Display for CBSError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CBSError::AlreadySolved => write!(f, "CBS instance already solved"),
+        }
+    }
+}
+
+impl Error for CBSError {}
+
+pub struct CBS<'a> {
+    scenario: &'a Grid,
+    agents: Vec<&'a Agent>,
+    solved: bool,
+    pub high_level_expanded: usize,
+    pub low_level_expanded: usize,
+}
+
+impl<'a> CBS<'a> {
+    pub fn new(scenario: &'a Grid, agents: Vec<&'a Agent>) -> Self {
+        CBS {
+            scenario,
+            agents,
+            high_level_expanded: 0,
+            low_level_expanded: 0,
+            solved: false,
+        }
+    }
+
+    pub fn solve(&mut self) -> Result<HashMap<&Agent, Path>, Box<dyn Error>> {
+        if self.solved {
+            return Err(Box::new(CBSError::AlreadySolved));
+        }
+        let root = ConflictTreeNode::new(
+            self.agents.clone(),
+            Vec::<Box<Constraint>>::new(),
+            HashMap::<&Agent, Vec<(i32, i32)>>::new(),
+            self.scenario,
+        );
+        let solution = a_star(root);
+        self.solved = true;
+        match solution {
+            Ok(solution) => {
+                self.high_level_expanded += solution.nodes_expanded as usize;
+                let last_node = solution.path.last().unwrap();
+                let mut paths = HashMap::<&Agent, Path>::new();
+                for agent in self.agents.iter() {
+                    paths.insert(agent, last_node.paths[agent].clone());
+                }
+                Ok(paths)
+            }
+            Err(error) => Err(Box::new(error)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;
