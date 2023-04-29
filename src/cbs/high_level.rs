@@ -81,44 +81,47 @@ impl<'a> ConflictTreeNode<'a> {
     fn compute_conflicts(&mut self) {
         let mut conflicts = Vec::<Box<Conflict>>::new();
         let mut agent_locations = HashMap::<(i32, i32), Vec<&Agent>>::new();
-        for i in 0..self.paths.values().map(|p| p.len()).max().unwrap() {
+        for time_step in 0..self.paths.values().map(|p| p.len()).max().unwrap() {
             for agent in self.agents.iter() {
-                if i >= self.paths[agent].len() {
+                if time_step >= self.paths[agent].len() {
                     continue;
                 }
-                let location = self.paths[agent][i];
+                let location = self.paths[agent][time_step];
                 agent_locations
                     .entry(location)
                     .or_insert(Vec::<&Agent>::new())
                     .push(agent);
-                if i > 0 {
+                if time_step > 0 {
                     agent_locations
-                        .entry(self.paths[agent][i - 1])
+                        .entry(self.paths[agent][time_step - 1])
                         .or_default()
                         .retain(|a| a != agent);
                 }
             }
             for (location, agents) in agent_locations.iter() {
                 if agents.len() > 1 {
-                    for (j, agent) in agents.iter().enumerate() {
+                    for (j, agent1) in agents.iter().enumerate() {
                         for agent2 in agents[..j].iter() {
-                            if i > 0
-                                && i < self.paths[agent2].len()
-                                && self.paths[agent2][i] == self.paths[agent][i - 1]
+                            if time_step > 0
+                                && time_step < self.paths[agent2].len()
+                                && time_step < self.paths[agent1].len()
+                                && self.paths[agent2][time_step]
+                                    == self.paths[agent1][time_step - 1]
+                                && self.paths[agent2][time_step - 1]
+                                    == self.paths[agent1][time_step]
                             {
-                                // TODO: fix condition
                                 conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
-                                    agent1: agent,
-                                    agent2: agent2,
-                                    time: i as i32,
-                                    location1: self.paths[agent][i - 1],
+                                    agent1,
+                                    agent2,
+                                    time: time_step as i32,
+                                    location1: self.paths[agent1][time_step - 1],
                                     location2: location.clone(),
                                 })));
                             } else {
                                 conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
-                                    agent1: agent,
-                                    agent2: agent2,
-                                    time: i as i32,
+                                    agent1,
+                                    agent2,
+                                    time: time_step as i32,
                                     location: location.clone(),
                                 })));
                             }
