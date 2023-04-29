@@ -62,6 +62,10 @@ impl<'a> ConflictTreeNode<'a> {
         constraints: Vec<Box<Constraint<'a>>>,
         precomputed_paths: HashMap<&'a Agent, Vec<(i32, i32)>>,
         scenario: &'a Grid,
+        conflict_picker: Option<
+            fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
+        >,
+        post_expanded_callback: Option<fn(Vec<Box<Self>>) -> Option<Vec<Box<Self>>>>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -72,7 +76,12 @@ impl<'a> ConflictTreeNode<'a> {
             conflict_picker: |_, _, conflicts| Some(conflicts[0].clone()),
             post_expanded_callback: |expanded| Some(expanded), // TODO: replace with optimization
         };
-        ctn.conflict_picker = pick_conflict;
+        if let Some(pick_conflict) = conflict_picker {
+            ctn.conflict_picker = pick_conflict;
+        }
+        if let Some(callback) = post_expanded_callback {
+            ctn.post_expanded_callback = callback;
+        }
         ctn.compute_paths();
         ctn.compute_conflicts();
         ctn
@@ -202,6 +211,8 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         new_constraints,
                         new_paths,
                         self.scenario,
+                        Some(self.conflict_picker),
+                        Some(self.post_expanded_callback),
                     )));
                 }
             }
@@ -226,6 +237,8 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         new_constraints,
                         self.paths.clone(),
                         self.scenario,
+                        Some(self.conflict_picker),
+                        Some(self.post_expanded_callback),
                     )));
                 }
             }

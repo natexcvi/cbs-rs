@@ -39,6 +39,8 @@ fn test_high_level() {
         constraints,
         precomputed_paths,
         &grid,
+        Some(pick_conflict),
+        None,
     );
     assert_eq!(ctn.conflicts.len(), 1);
     match ctn.expand() {

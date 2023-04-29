@@ -26,22 +26,34 @@ impl fmt::Display for CBSError {
 
 impl Error for CBSError {}
 
+pub struct CBSOptimisationConfig {
+    priotising_conflicts: bool,
+}
+
 pub struct CBS<'a> {
     scenario: &'a Grid,
     agents: Vec<&'a Agent>,
     solved: bool,
     pub high_level_expanded: usize,
     pub low_level_expanded: usize,
+    optimisation_config: CBSOptimisationConfig,
 }
 
 impl<'a> CBS<'a> {
-    pub fn new(scenario: &'a Grid, agents: Vec<&'a Agent>) -> Self {
+    pub fn new(
+        scenario: &'a Grid,
+        agents: Vec<&'a Agent>,
+        optimisation_config: Option<CBSOptimisationConfig>,
+    ) -> Self {
         CBS {
             scenario,
             agents,
             high_level_expanded: 0,
             low_level_expanded: 0,
             solved: false,
+            optimisation_config: optimisation_config.unwrap_or(CBSOptimisationConfig {
+                priotising_conflicts: false,
+            }),
         }
     }
 
@@ -54,6 +66,12 @@ impl<'a> CBS<'a> {
             Vec::<Box<Constraint>>::new(),
             HashMap::<&Agent, Vec<(i32, i32)>>::new(),
             self.scenario,
+            if self.optimisation_config.priotising_conflicts {
+                Some(optimisations::conflict_prioritisation::pick_conflict)
+            } else {
+                None
+            },
+            None,
         );
         let solution = a_star(root);
         self.solved = true;
