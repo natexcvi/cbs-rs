@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
 use std::rc::Rc;
 
+use crate::cbs::high_level::Path;
 use crate::cbs::{
     high_level::{Agent, Conflict},
     low_level::{Grid, LocationTime},
@@ -144,63 +145,62 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, M
     Ok(mdd)
 }
 
-pub fn pick_conflict<'a>(conflicts: &Vec<Box<Conflict<'a>>>) -> Option<&'a Box<Conflict<'a>>> {
-    let mut min_conflict = None;
-    for conflict in conflicts {}
-    min_conflict
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum ConflictCardinality {
+    Cardinal,
+    SemiCardinal,
+    NonCardinal,
+}
+
+fn cardinality(
+    scenario: &Grid,
+    paths: &HashMap<&Agent, Path>,
+    conflict: &Conflict,
+) -> ConflictCardinality {
+    let agent1: &Agent;
+    let agent2: &Agent;
+    let time: i32;
+    match conflict {
+        Conflict::Vertex(c) => {
+            agent1 = c.agent1;
+            agent2 = c.agent2;
+            time = c.time;
+        }
+        Conflict::Edge(c) => {
+            agent1 = c.agent1;
+            agent2 = c.agent2;
+            time = c.time;
+        }
+    }
+    let c1 = paths[agent1].len();
+    let c2 = paths[agent2].len();
+    let agent1_mdd = mdd(agent1, scenario, c1 as i32).unwrap();
+    let agent2_mdd = mdd(agent2, scenario, c2 as i32).unwrap();
+    if agent1_mdd[time.clone() as usize].len() == 1 && agent2_mdd[time.clone() as usize].len() == 1
+    {
+        return ConflictCardinality::Cardinal;
+    } else if agent1_mdd[time.clone() as usize].len() == 1
+        || agent2_mdd[time.clone() as usize].len() == 1
+    {
+        return ConflictCardinality::SemiCardinal;
+    } else {
+        return ConflictCardinality::NonCardinal;
+    }
+}
+
+pub fn pick_conflict<'a>(
+    scenario: &Grid,
+    paths: &HashMap<&Agent, Path>,
+    conflicts: &Vec<Box<Conflict<'a>>>,
+) -> Option<Box<Conflict<'a>>> {
+    let min_conflict = conflicts
+        .iter()
+        .min_by(|a, b| cardinality(scenario, paths, a).cmp(&cardinality(scenario, paths, b)));
+    match min_conflict {
+        Some(c) => Some(c.clone()),
+        None => None,
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use rstest::rstest;
-
-    #[rstest]
-    #[case::simple(
-        crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
-        (0, 0),
-        (5, 5),
-        10,
-        Ok(vec![
-            vec![(0,0)],
-            vec![(1,0),(0,1)],
-            vec![(2,0),(1,1),(0,2)],
-            vec![(3,0),(2,1),(1,2),(0,3)],
-            vec![(4,0),(3,1),(2,2),(1,3),(0,4)],
-            vec![(5,0),(4,1),(3,2),(2,3),(1,4),(0,5)],
-            vec![(5,1), (4,2), (3,3), (2,4), (1,5)],
-            vec![(5,2), (4,3), (3,4), (2,5)],
-            vec![(5,3), (4,4), (3,5)],
-            vec![(5,4), (4,5)],
-            vec![(5,5)],
-        ])
-    )]
-    #[case::goal_unreachable_error(
-        crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
-        (0, 0),
-        (5, 6),
-        10,
-        Err(crate::cbs::optimisations::conflict_prioritisation::MDDError::GoalUnreachable),
-    )]
-    fn test_mdd(
-        #[case] scenario: crate::cbs::low_level::Grid,
-        #[case] start: (i32, i32),
-        #[case] goal: (i32, i32),
-        #[case] c: i32,
-        #[case] expected: Result<Vec<Vec<(i32, i32)>>, super::MDDError>,
-    ) {
-        let agent = crate::cbs::high_level::Agent {
-            id: "a".to_string(),
-            start,
-            goal,
-        };
-        let mdd = super::mdd(&agent, &scenario, c);
-        match mdd {
-            Ok(mdd) => {
-                assert_eq!(mdd, expected.unwrap());
-            }
-            Err(_) => {
-                assert!(expected.is_err());
-            }
-        }
-    }
-}
+mod tests;

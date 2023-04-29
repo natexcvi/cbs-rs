@@ -1,24 +1,25 @@
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
+    optimisations::conflict_prioritisation::pick_conflict,
     search::{a_star, AStarNode},
 };
 use std::{collections::HashMap, error::Error, fmt, hash::Hash};
 
 #[derive(Clone)]
 pub struct VertexConflict<'a> {
-    agent1: &'a Agent,
-    agent2: &'a Agent,
-    time: i32,
-    location: (i32, i32),
+    pub agent1: &'a Agent,
+    pub agent2: &'a Agent,
+    pub time: i32,
+    pub location: (i32, i32),
 }
 
 #[derive(Clone)]
 pub struct EdgeConflict<'a> {
-    agent1: &'a Agent,
-    agent2: &'a Agent,
-    time: i32,
-    location1: (i32, i32),
-    location2: (i32, i32),
+    pub agent1: &'a Agent,
+    pub agent2: &'a Agent,
+    pub time: i32,
+    pub location1: (i32, i32),
+    pub location2: (i32, i32),
 }
 
 #[derive(Clone)]
@@ -50,7 +51,8 @@ pub struct ConflictTreeNode<'a> {
     paths: HashMap<&'a Agent, Path>,
     conflicts: Vec<Box<Conflict<'a>>>,
     scenario: &'a Grid,
-    conflict_picker: fn(&Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
+    conflict_picker:
+        fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
 }
 
@@ -67,9 +69,10 @@ impl<'a> ConflictTreeNode<'a> {
             paths: precomputed_paths,
             conflicts: Vec::<Box<Conflict>>::new(),
             scenario,
-            conflict_picker: |conflicts| Some(conflicts[0].clone()), // TODO: replace with a better picker
+            conflict_picker: |_, _, conflicts| Some(conflicts[0].clone()),
             post_expanded_callback: |expanded| Some(expanded), // TODO: replace with optimization
         };
+        ctn.conflict_picker = pick_conflict;
         ctn.compute_paths();
         ctn.compute_conflicts();
         ctn
@@ -178,7 +181,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         if self.conflicts.is_empty() {
             return Some(expanded);
         }
-        let conflict = (self.conflict_picker)(&self.conflicts)?;
+        let conflict = (self.conflict_picker)(self.scenario, &self.paths, &self.conflicts)?;
         match *conflict {
             Conflict::Vertex(vc) => {
                 for agent in vec![vc.agent1, vc.agent2] {
@@ -201,6 +204,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             }
             Conflict::Edge(ec) => {
                 for agent in vec![ec.agent1, ec.agent2] {
+                    // TODO: remove the second constraint which is unneeded
                     let constraint1 = Constraint {
                         agent,
                         time: ec.time,
