@@ -2,7 +2,7 @@ use crate::cbs::high_level::{Conflict, ConflictTreeNode};
 
 pub fn bypass_conflict<'a>(
     parent: &ConflictTreeNode<'a>,
-    conflict: &Conflict,
+    conflict: &Conflict<'a>,
     children: Vec<Box<ConflictTreeNode<'a>>>,
 ) -> Option<Vec<Box<ConflictTreeNode<'a>>>> {
     let (agent1, agent2) = match conflict {
@@ -10,11 +10,8 @@ pub fn bypass_conflict<'a>(
         Conflict::Edge(conflict) => (conflict.agent1, conflict.agent2),
     };
     for child in children.iter() {
-        for (agent, path) in child
-            .paths
-            .iter()
-            .filter(|(agent, _)| **agent == agent1 || **agent == agent2)
-        {
+        for agent in vec![agent1, agent2] {
+            let path = child.paths[agent].clone();
             if path.len() > parent.paths[agent].len() {
                 continue;
             }

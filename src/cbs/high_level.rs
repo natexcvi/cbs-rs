@@ -52,7 +52,7 @@ pub struct ConflictTreeNode<'a> {
     scenario: &'a Grid,
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
-    post_expanded_callback: fn(&Self, &Conflict, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+    post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
 }
 
 impl<'a> ConflictTreeNode<'a> {
@@ -65,7 +65,7 @@ impl<'a> ConflictTreeNode<'a> {
             fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
         >,
         post_expanded_callback: Option<
-            fn(&Self, &Conflict, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+            fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
         >,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
