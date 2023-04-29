@@ -5,7 +5,7 @@ use super::{
 };
 use std::{collections::HashMap, error::Error, fmt, hash::Hash};
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct VertexConflict<'a> {
     pub agent1: &'a Agent,
     pub agent2: &'a Agent,
@@ -13,7 +13,7 @@ pub struct VertexConflict<'a> {
     pub location: (i32, i32),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct EdgeConflict<'a> {
     pub agent1: &'a Agent,
     pub agent2: &'a Agent,
@@ -22,7 +22,7 @@ pub struct EdgeConflict<'a> {
     pub location2: (i32, i32),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Conflict<'a> {
     Vertex(VertexConflict<'a>),
     Edge(EdgeConflict<'a>),
@@ -37,7 +37,7 @@ pub struct Constraint<'a> {
 
 pub type Path = Vec<(i32, i32)>;
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Agent {
     pub id: String,
     pub start: (i32, i32),
