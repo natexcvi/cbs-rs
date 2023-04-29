@@ -1,9 +1,8 @@
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
-    optimisations::conflict_prioritisation::pick_conflict,
-    search::{a_star, AStarNode},
+    search::AStarNode,
 };
-use std::{collections::HashMap, error::Error, fmt, hash::Hash};
+use std::{collections::HashMap, hash::Hash};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct VertexConflict<'a> {
@@ -49,11 +48,11 @@ pub struct ConflictTreeNode<'a> {
     constraints: Vec<Box<Constraint<'a>>>,
     agents: Vec<&'a Agent>,
     pub paths: HashMap<&'a Agent, Path>,
-    conflicts: Vec<Box<Conflict<'a>>>,
+    pub conflicts: Vec<Box<Conflict<'a>>>,
     scenario: &'a Grid,
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
-    post_expanded_callback: fn(Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+    post_expanded_callback: fn(&Self, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
 }
 
 impl<'a> ConflictTreeNode<'a> {
@@ -65,7 +64,7 @@ impl<'a> ConflictTreeNode<'a> {
         conflict_picker: Option<
             fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
         >,
-        post_expanded_callback: Option<fn(Vec<Box<Self>>) -> Option<Vec<Box<Self>>>>,
+        post_expanded_callback: Option<fn(&Self, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -74,7 +73,7 @@ impl<'a> ConflictTreeNode<'a> {
             conflicts: Vec::<Box<Conflict>>::new(),
             scenario,
             conflict_picker: |_, _, conflicts| Some(conflicts[0].clone()),
-            post_expanded_callback: |expanded| Some(expanded), // TODO: replace with optimization
+            post_expanded_callback: |_, expanded| Some(expanded), // TODO: replace with optimization
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -87,7 +86,7 @@ impl<'a> ConflictTreeNode<'a> {
         ctn
     }
 
-    fn compute_conflicts(&mut self) {
+    pub fn compute_conflicts(&mut self) {
         let mut conflicts = Vec::<Box<Conflict>>::new();
         let mut agent_locations = HashMap::<(i32, i32), Vec<&Agent>>::new();
         for time_step in 0..self.paths.values().map(|p| p.len()).max().unwrap() {
@@ -243,7 +242,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                 }
             }
         }
-        (self.post_expanded_callback)(expanded)
+        (self.post_expanded_callback)(self, expanded)
     }
 }
 

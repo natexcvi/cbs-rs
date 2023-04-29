@@ -1,5 +1,6 @@
+use crate::cbs::optimisations::conflict_prioritisation::pick_conflict;
+
 use super::*;
-use rstest::*;
 
 #[test]
 fn test_high_level() {
@@ -34,7 +35,7 @@ fn test_high_level() {
         obstacles: vec![],
         goal: (9, 9),
     };
-    let ctn = ConflictTreeNode::new(
+    let mut ctn = ConflictTreeNode::new(
         agents.iter().collect(),
         constraints,
         precomputed_paths,

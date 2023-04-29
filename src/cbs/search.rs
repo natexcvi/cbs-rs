@@ -122,6 +122,7 @@ where
         }
         match current.node.expand() {
             Some(expand) => {
+                nodes_expanded += expand.len() as i32;
                 for neighbor in expand {
                     frontier.push(Reverse(HeapNode {
                         node: *neighbor,

@@ -5,6 +5,7 @@ use rstest::rstest;
 #[case::simple(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
+        bypassing_conflicts: true,
     }),
     vec![
 Agent {
@@ -26,6 +27,7 @@ goal: (9, 9),
 #[case::opposite_corners(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
+        bypassing_conflicts: true,
     }),
     vec![
 Agent {
@@ -47,6 +49,7 @@ goal: (9, 9),
 #[case::crowded(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
+        bypassing_conflicts: true,
     }),
     vec![
 Agent {
@@ -73,6 +76,7 @@ goal: (0, 0),
 #[case::crowded_with_obstacles(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
+        bypassing_conflicts: true,
     }),
     vec![
 Agent {
@@ -99,6 +103,7 @@ goal: (0, 0),
 #[case::must_wait(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
+        bypassing_conflicts: true,
     }),
     vec![
 Agent {

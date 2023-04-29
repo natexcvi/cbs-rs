@@ -28,6 +28,7 @@ impl Error for CBSError {}
 
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
+    bypassing_conflicts: bool,
 }
 
 pub struct CBS<'a> {
@@ -53,6 +54,7 @@ impl<'a> CBS<'a> {
             solved: false,
             optimisation_config: optimisation_config.unwrap_or(CBSOptimisationConfig {
                 priotising_conflicts: false,
+                bypassing_conflicts: false,
             }),
         }
     }
