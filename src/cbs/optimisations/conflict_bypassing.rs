@@ -1,4 +1,4 @@
-use crate::cbs::high_level::{Agent, Conflict, ConflictTreeNode, Path};
+use crate::cbs::high_level::ConflictTreeNode;
 
 pub fn bypass_conflict<'a>(
     parent: &ConflictTreeNode<'a>,
