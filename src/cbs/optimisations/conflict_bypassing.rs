@@ -2,9 +2,9 @@ use crate::cbs::high_level::{Agent, Conflict, ConflictTreeNode, Path};
 
 pub fn bypass_conflict<'a>(
     parent: &ConflictTreeNode<'a>,
-    nodes: Vec<Box<ConflictTreeNode<'a>>>,
+    children: Vec<Box<ConflictTreeNode<'a>>>,
 ) -> Option<Vec<Box<ConflictTreeNode<'a>>>> {
-    for child in nodes.iter() {
+    for child in children.iter() {
         for (agent, path) in child.paths.iter() {
             if path.len() > parent.paths[agent].len() {
                 continue;
@@ -18,5 +18,5 @@ pub fn bypass_conflict<'a>(
             return Some(vec![Box::new(new_parent)]);
         }
     }
-    Some(nodes)
+    Some(children)
 }
