@@ -73,7 +73,11 @@ impl<'a> CBS<'a> {
             } else {
                 None
             },
-            None,
+            if self.optimisation_config.bypassing_conflicts {
+                Some(optimisations::conflict_bypassing::bypass_conflict)
+            } else {
+                None
+            },
         );
         let solution = a_star(root);
         self.solved = true;

@@ -1,6 +1,6 @@
 use crate::cbs::high_level::{Agent, Conflict, ConflictTreeNode, Path};
 
-fn bypass_conflict<'a>(
+pub fn bypass_conflict<'a>(
     parent: &ConflictTreeNode<'a>,
     nodes: Vec<Box<ConflictTreeNode<'a>>>,
 ) -> Option<Vec<Box<ConflictTreeNode<'a>>>> {
