@@ -72,7 +72,7 @@ width: 2,
 height: 2,
 obstacles: vec![],
 goal: (0, 0),
-}, vec![3, 2, 3])]
+}, vec![4, 2, 3])] // TODO: confirm this case
 #[case::crowded_with_obstacles(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,

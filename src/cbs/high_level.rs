@@ -2,6 +2,7 @@ use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::AStarNode,
 };
+use core::time;
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -97,50 +98,61 @@ impl<'a> ConflictTreeNode<'a> {
                     continue;
                 }
                 let location = self.paths[agent][time_step];
-                agent_locations
+                let current_location_agents = agent_locations
                     .entry(location)
-                    .or_insert(Vec::<&Agent>::new())
-                    .push(agent);
+                    .or_insert(Vec::<&Agent>::new());
+                if !current_location_agents.contains(&agent) {
+                    current_location_agents.push(agent);
+                }
                 if time_step > 0 {
-                    agent_locations
-                        .entry(self.paths[agent][time_step - 1])
-                        .or_default()
-                        .retain(|a| a != agent);
+                    let prev_location = self.paths[agent][time_step - 1];
+                    if prev_location != location {
+                        agent_locations
+                            .entry(prev_location)
+                            .or_default()
+                            .retain(|a| a != agent);
+                    }
                 }
             }
             for (location, agents) in agent_locations.iter() {
-                if agents.len() > 1 {
-                    for (j, agent1) in agents.iter().enumerate() {
-                        for agent2 in agents[..j].iter() {
-                            if time_step > 0
-                                && time_step < self.paths[agent2].len()
-                                && time_step < self.paths[agent1].len()
-                                && self.paths[agent2][time_step]
-                                    == self.paths[agent1][time_step - 1]
-                                && self.paths[agent2][time_step - 1]
-                                    == self.paths[agent1][time_step]
-                            {
-                                conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
-                                    agent1,
-                                    agent2,
-                                    time: time_step as i32,
-                                    location1: self.paths[agent1][time_step - 1],
-                                    location2: location.clone(),
-                                })));
-                            } else {
-                                conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
-                                    agent1,
-                                    agent2,
-                                    time: time_step as i32,
-                                    location: location.clone(),
-                                })));
-                            }
+                for (j, agent1) in agents.iter().enumerate() {
+                    for agent2 in agents[..j].iter() {
+                        if agents.len() > 1 {
+                            conflicts.push(Box::new(Conflict::Vertex(VertexConflict {
+                                agent1,
+                                agent2,
+                                time: time_step as i32,
+                                location: location.clone(),
+                            })));
+                        }
+                    }
+                    if time_step == 0 || time_step >= self.paths[agent1].len() {
+                        continue;
+                    }
+                    for agent2 in agent_locations
+                        .get(&self.paths[agent1][time_step - 1])
+                        .unwrap()
+                    {
+                        if time_step >= self.paths[agent2].len()
+                            || agent1 == agent2
+                            || &self.paths[agent1][time_step - 1] > location
+                        {
+                            continue;
+                        }
+                        if &self.paths[agent2][time_step - 1] == location {
+                            conflicts.push(Box::new(Conflict::Edge(EdgeConflict {
+                                agent1,
+                                agent2,
+                                time: time_step as i32,
+                                location1: location.clone(),
+                                location2: self.paths[agent1][time_step - 1],
+                            })));
                         }
                     }
                 }
             }
         }
-        self.conflicts.append(&mut conflicts);
+        self.conflicts = conflicts;
     }
 
     fn compute_paths(&mut self) {
@@ -218,25 +230,20 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                 }
             }
             Conflict::Edge(ec) => {
-                for agent in vec![ec.agent1, ec.agent2] {
-                    // TODO: remove the second constraint which is unneeded
-                    let constraint1 = Constraint {
+                for (i, agent) in vec![ec.agent1, ec.agent2].iter().enumerate() {
+                    let constraint = Constraint {
                         agent,
                         time: ec.time,
-                        location: ec.location1,
-                    };
-                    let constraint2 = Constraint {
-                        agent,
-                        time: ec.time + 1,
-                        location: ec.location2,
+                        location: if i == 0 { ec.location1 } else { ec.location2 },
                     };
                     let mut new_constraints = self.constraints.clone();
-                    new_constraints.push(Box::new(constraint1));
-                    new_constraints.push(Box::new(constraint2));
+                    new_constraints.push(Box::new(constraint));
+                    let mut new_paths = self.paths.clone();
+                    new_paths.remove(agent);
                     expanded.push(Box::new(ConflictTreeNode::new(
                         self.agents.clone(),
                         new_constraints,
-                        self.paths.clone(),
+                        new_paths,
                         self.scenario,
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
