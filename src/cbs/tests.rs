@@ -150,7 +150,6 @@ fn test_cbs(
 }
 
 #[rstest]
-#[ignore = "should manually check expected paths"]
 #[case::simple(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
@@ -158,7 +157,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/empty-16-16.map",
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
-    vec![19, 17, 0, 0, 0]
+    vec![6, 20, 7, 23, 15]
 )]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
@@ -175,7 +174,10 @@ fn test_cbs_from_files(
             for (agent, path) in paths.iter() {
                 assert_eq!(
                     path.len(),
-                    exp_path_lengths[paths.keys().position(|a| a == agent).unwrap()]
+                    exp_path_lengths[agent
+                        .id
+                        .parse::<usize>()
+                        .expect("agent id should be numeric")]
                 );
             }
         }
