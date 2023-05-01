@@ -1,8 +1,8 @@
 use regex::Regex;
-use std::fs::File;
+use std::{fs::File, io::Read};
 
 use super::{
-    high_level::Path,
+    high_level::{Agent, Path},
     low_level::{Grid, LocationTime},
 };
 
@@ -66,6 +66,41 @@ impl TryInto<String> for Grid {
     type Error = String;
 }
 
+impl TryFrom<String> for Agent {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+pub fn load_scenario_file(scen_file: &str) -> Result<Vec<Agent>, String> {
+    let agents_regex = Regex::new(r"version \d+(?:\.\d+)?\r?\n((?:\d+\t(?:.+)\t\d+\t\d+\t\d+\t\d+\t\d+\t\d+\t[\d.]+(?:\r?\n)?)*)").unwrap();
+    let mut scen_file = File::open(scen_file).map_err(|e| e.to_string())?;
+    let mut scen_content = String::new();
+    scen_file
+        .read_to_string(&mut scen_content)
+        .map_err(|e| e.to_string())?;
+    let scen_match = agents_regex
+        .captures(&scen_content)
+        .ok_or("Invalid scenario file")?;
+    let agents_regex =
+        Regex::new(r"(\d+)\t(.+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t([\d.]+)").unwrap();
+    let mut agents: Vec<Agent> = Vec::new();
+    for (i, caps) in agents_regex.captures_iter(&scen_match[1]).enumerate() {
+        let x_start = caps[5].parse::<i32>().or(Err("start x not a number"))? + 1;
+        let y_start = caps[6].parse::<i32>().or(Err("start y not a number"))? + 1;
+        let x_goal = caps[7].parse::<i32>().or(Err("goal x not a number"))? + 1;
+        let y_goal = caps[8].parse::<i32>().or(Err("goal y not a number"))? + 1;
+        agents.push(Agent {
+            id: i.to_string(),
+            start: (x_start, y_start),
+            goal: (x_goal, y_goal),
+        });
+    }
+    Ok(agents)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,5 +132,25 @@ mod tests {
         assert_eq!(map.height, height);
         assert_eq!(map.width, width);
         assert_eq!(map.obstacles, obstacles);
+    }
+
+    #[rstest]
+    #[case::simple_24x24_12_agents("tests/testdata/scenarios/24x24_12_agents.scen", vec![
+        Agent { id: "0".to_string(), start: (12, 1), goal: (12, 12) },
+        Agent { id: "1".to_string(), start: (1, 12), goal: (12, 23) },
+        Agent { id: "2".to_string(), start: (11, 2), goal: (24, 13) },
+        Agent { id: "3".to_string(), start: (10, 3), goal: (24, 14) },
+        Agent { id: "4".to_string(), start: (9, 4), goal: (24, 15) },
+        Agent { id: "5".to_string(), start: (8, 5), goal: (24, 16) },
+        Agent { id: "6".to_string(), start: (7, 6), goal: (24, 17) },
+        Agent { id: "7".to_string(), start: (6, 7), goal: (24, 18) },
+        Agent { id: "8".to_string(), start: (5, 8), goal: (24, 19) },
+        Agent { id: "9".to_string(), start: (4, 9), goal: (24, 20) },
+        Agent { id: "10".to_string(), start: (3, 10), goal: (24, 21) },
+        Agent { id: "11".to_string(), start: (2, 11), goal: (24, 22) }
+    ])]
+    fn test_load_scenario_file(#[case] scen_file_path: &str, #[case] exp_agents: Vec<Agent>) {
+        let agents = load_scenario_file(scen_file_path).unwrap();
+        assert_eq!(agents, exp_agents);
     }
 }
