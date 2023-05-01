@@ -10,6 +10,7 @@ mod high_level;
 mod low_level;
 mod optimisations;
 pub mod search;
+mod io;
 
 #[derive(Debug)]
 pub enum CBSError {
