@@ -7,10 +7,10 @@ use self::{
 };
 
 mod high_level;
+mod io;
 mod low_level;
 mod optimisations;
 pub mod search;
-mod io;
 
 #[derive(Debug)]
 pub enum CBSError {
@@ -32,24 +32,23 @@ pub struct CBSOptimisationConfig {
     bypassing_conflicts: bool,
 }
 
-pub struct CBS<'a> {
-    scenario: &'a Grid,
-    agents: Vec<&'a Agent>,
+pub struct CBSInstance {
+    map: Grid,
+    agents: Vec<Agent>,
+}
+
+pub struct CBS {
+    instance: CBSInstance,
     solved: bool,
     pub high_level_expanded: usize,
     pub low_level_expanded: usize,
     optimisation_config: CBSOptimisationConfig,
 }
 
-impl<'a> CBS<'a> {
-    pub fn new(
-        scenario: &'a Grid,
-        agents: Vec<&'a Agent>,
-        optimisation_config: Option<CBSOptimisationConfig>,
-    ) -> Self {
+impl CBS {
+    pub fn new(instance: CBSInstance, optimisation_config: Option<CBSOptimisationConfig>) -> Self {
         CBS {
-            scenario,
-            agents,
+            instance,
             high_level_expanded: 0,
             low_level_expanded: 0,
             solved: false,
@@ -65,10 +64,10 @@ impl<'a> CBS<'a> {
             return Err(Box::new(CBSError::AlreadySolved));
         }
         let root = ConflictTreeNode::new(
-            self.agents.clone(),
+            self.instance.agents.iter().collect(),
             Vec::<Box<Constraint>>::new(),
             HashMap::<&Agent, Vec<(i32, i32)>>::new(),
-            self.scenario,
+            &self.instance.map,
             if self.optimisation_config.priotising_conflicts {
                 Some(optimisations::conflict_prioritisation::pick_conflict)
             } else {
@@ -87,7 +86,7 @@ impl<'a> CBS<'a> {
                 self.high_level_expanded += solution.nodes_expanded as usize;
                 let last_node = solution.path.last().unwrap();
                 let mut paths = HashMap::<&Agent, Path>::new();
-                for agent in self.agents.iter() {
+                for agent in self.instance.agents.iter() {
                     paths.insert(agent, last_node.paths[agent].clone());
                 }
                 Ok(paths)

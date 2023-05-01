@@ -128,7 +128,13 @@ fn test_cbs(
     #[case] grid: Grid,
     #[case] exp_path_lengths: Vec<usize>,
 ) {
-    let mut cbs = CBS::new(&grid, agents.iter().collect(), optimisation_config);
+    let mut cbs = CBS::new(
+        CBSInstance {
+            map: grid,
+            agents: agents.clone(),
+        },
+        optimisation_config,
+    );
     match cbs.solve() {
         Ok(paths) => {
             assert_eq!(paths.len(), exp_path_lengths.len());
@@ -136,6 +142,40 @@ fn test_cbs(
                 assert_eq!(
                     path.len(),
                     exp_path_lengths[agents.iter().position(|a| a == *agent).unwrap()]
+                );
+            }
+        }
+        Err(e) => panic!("Error: {:?}", e),
+    }
+}
+
+#[rstest]
+#[ignore = "should manually check expected paths"]
+#[case::simple(
+    Some(CBSOptimisationConfig {
+        priotising_conflicts: true,
+        bypassing_conflicts: true,
+    }),
+    "tests/testdata/maps/empty-16-16.map",
+    "tests/testdata/scenarios/empty-16-16-even-1.scen",
+    vec![19, 17, 0, 0, 0]
+)]
+fn test_cbs_from_files(
+    #[case] optimisation_config: Option<CBSOptimisationConfig>,
+    #[case] map_file: &str,
+    #[case] scenario_file: &str,
+    #[case] exp_path_lengths: Vec<usize>,
+) {
+    let cbs_instance =
+        CBSInstance::from_files(map_file, scenario_file).expect("should be valid scenario files");
+    let mut cbs = CBS::new(cbs_instance, optimisation_config);
+    match cbs.solve() {
+        Ok(paths) => {
+            assert_eq!(paths.len(), exp_path_lengths.len());
+            for (agent, path) in paths.iter() {
+                assert_eq!(
+                    path.len(),
+                    exp_path_lengths[paths.keys().position(|a| a == agent).unwrap()]
                 );
             }
         }

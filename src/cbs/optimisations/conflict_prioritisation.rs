@@ -23,7 +23,7 @@ enum BFSNode<T> {
 fn bfs<T, S, F, G>(nodes: &mut HashMap<T, S>, root: T, depth: i32, mut visit: G, mut expand: F)
 where
     F: FnMut(&mut HashMap<T, S>, T) -> Vec<T>,
-    G: FnMut(&mut HashMap<T, S>, T, i32),
+    G: FnMut(&mut HashMap<T, S>, T, i32) -> bool,
     T: Clone,
 {
     let mut cur_depth = 0;
@@ -34,7 +34,9 @@ where
         let node = bfs_queue.pop_front().unwrap();
         match node {
             BFSNode::Node(node) => {
-                visit(nodes, node.clone(), cur_depth);
+                if visit(nodes, node.clone(), cur_depth) {
+                    continue;
+                }
                 for neighbour in expand(nodes, node) {
                     bfs_queue.push_back(BFSNode::Node(neighbour));
                 }
@@ -77,6 +79,7 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, M
 
             cur_node.goal_reachable = true;
             cur_node.level = level;
+            false
         },
         |nodes, node_location| {
             let node = nodes.get_mut(&node_location).unwrap();
@@ -115,12 +118,13 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, M
         |nodes, node, level| {
             let cur_node = nodes.get_mut(&node).unwrap();
             if cur_node.visited {
-                return;
+                return true;
             }
             cur_node.visited = true;
             if cur_node.goal_reachable && cur_node.level + level <= c {
                 mdd[level as usize].push(node);
             }
+            false
         },
         |nodes, node_location| {
             let node = nodes.get_mut(&node_location).unwrap();

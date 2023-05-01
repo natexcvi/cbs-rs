@@ -1,9 +1,13 @@
 use regex::Regex;
-use std::{fs::File, io::Read};
+use std::{
+    fs::{self, File},
+    io::Read,
+};
 
 use super::{
     high_level::{Agent, Path},
     low_level::{Grid, LocationTime},
+    CBSInstance,
 };
 
 impl TryFrom<String> for Grid {
@@ -74,7 +78,16 @@ impl TryFrom<String> for Agent {
     }
 }
 
-pub fn load_scenario_file(scen_file: &str) -> Result<Vec<Agent>, String> {
+impl CBSInstance {
+    pub fn from_files(map_file: &str, scen_file: &str) -> Result<Self, String> {
+        let map_file_content = fs::read_to_string(map_file).map_err(|e| e.to_string())?;
+        let map = Grid::try_from(map_file_content)?;
+        let agents = load_scenario_file(scen_file)?;
+        Ok(CBSInstance { map, agents })
+    }
+}
+
+fn load_scenario_file(scen_file: &str) -> Result<Vec<Agent>, String> {
     let agents_regex = Regex::new(r"version \d+(?:\.\d+)?\r?\n((?:\d+\t(?:.+)\t\d+\t\d+\t\d+\t\d+\t\d+\t\d+\t[\d.]+(?:\r?\n)?)*)").unwrap();
     let mut scen_file = File::open(scen_file).map_err(|e| e.to_string())?;
     let mut scen_content = String::new();
@@ -88,10 +101,10 @@ pub fn load_scenario_file(scen_file: &str) -> Result<Vec<Agent>, String> {
         Regex::new(r"(\d+)\t(.+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t([\d.]+)").unwrap();
     let mut agents: Vec<Agent> = Vec::new();
     for (i, caps) in agents_regex.captures_iter(&scen_match[1]).enumerate() {
-        let x_start = caps[5].parse::<i32>().or(Err("start x not a number"))? + 1;
-        let y_start = caps[6].parse::<i32>().or(Err("start y not a number"))? + 1;
-        let x_goal = caps[7].parse::<i32>().or(Err("goal x not a number"))? + 1;
-        let y_goal = caps[8].parse::<i32>().or(Err("goal y not a number"))? + 1;
+        let x_start = caps[5].parse::<i32>().or(Err("start x not a number"))?;
+        let y_start = caps[6].parse::<i32>().or(Err("start y not a number"))?;
+        let x_goal = caps[7].parse::<i32>().or(Err("goal x not a number"))?;
+        let y_goal = caps[8].parse::<i32>().or(Err("goal y not a number"))?;
         agents.push(Agent {
             id: i.to_string(),
             start: (x_start, y_start),
