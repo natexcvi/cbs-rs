@@ -5,4 +5,4 @@ A Rust implementation of the Improved Conflict-Based Search algorithm for multi-
 TBD
 
 ## References
-1. <div class="csl-entry">Boyarski, E., Felner, A., Stern, R., Sharon, G., Betzalel, O., Tolpin, D., &#38; Shimony, E. (2021). ICBS: The Improved Conflict-Based Search Algorithm for Multi-Agent Pathfinding. <i>Proceedings of the International Symposium on Combinatorial Search</i>, <i>6</i>(1), 223–225. https://doi.org/10.1609/socs.v6i1.18343</div>
+1. Boyarski, E., Felner, A., Stern, R., Sharon, G., Tolpin, D., Betzalel, O., & Shimony, E. (2015). ICBS: Improved conflict-based search algorithm for multi-agent pathfinding. In M. Wooldridge, & Q. Yang (Eds.), IJCAI 2015 - Proceedings of the 24th International Joint Conference on Artificial Intelligence (pp. 740-746). (IJCAI International Joint Conference on Artificial Intelligence; Vol. 2015-January). International Joint Conferences on Artificial Intelligence.
