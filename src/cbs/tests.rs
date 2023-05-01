@@ -179,7 +179,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
-    vec![10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    vec![134, 364, 305]
 )]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,

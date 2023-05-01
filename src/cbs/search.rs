@@ -105,7 +105,7 @@ where
     for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
 {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
-    let mut nodes_expanded = 0;
+    let mut nodes_generated = 0;
     let mut best_g = HashMap::<String, f64>::new();
     frontier.push(Reverse(HeapNode {
         node: start,
@@ -120,7 +120,7 @@ where
         if current.node.is_goal() {
             return Ok(AStarSolution {
                 path: reconstruct_path(current),
-                nodes_expanded,
+                nodes_expanded: nodes_generated,
             });
         }
         match current.node.expand() {
@@ -134,7 +134,7 @@ where
                         node: *neighbor.clone(),
                         prev: Some(Rc::clone(&current)),
                     }));
-                    nodes_expanded += 1;
+                    nodes_generated += 1;
                 }
             }
             None => {
