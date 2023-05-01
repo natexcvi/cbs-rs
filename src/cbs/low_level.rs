@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use super::search::{a_star, AStarNode};
 
 #[derive(Debug, Eq, Hash, Clone, Copy)]
@@ -13,7 +15,7 @@ impl PartialEq for LocationTime {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Grid {
     pub width: i32,
     pub height: i32,
@@ -49,6 +51,20 @@ struct PathFindingNode<'a> {
     g: f64,
     h: f64,
     grid: &'a Grid,
+}
+
+impl PartialEq for PathFindingNode<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.loc_time == other.loc_time && self.grid == other.grid
+    }
+}
+
+impl Eq for PathFindingNode<'_> {}
+
+impl Hash for PathFindingNode<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.loc_time.hash(state);
+    }
 }
 
 impl<'a> PathFindingNode<'a> {

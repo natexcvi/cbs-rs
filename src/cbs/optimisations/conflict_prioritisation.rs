@@ -180,11 +180,20 @@ fn cardinality(
     let c2 = paths[agent2].len();
     let agent1_mdd = mdd(agent1, scenario, c1 as i32).unwrap();
     let agent2_mdd = mdd(agent2, scenario, c2 as i32).unwrap();
-    if agent1_mdd[time.clone() as usize].len() == 1 && agent2_mdd[time.clone() as usize].len() == 1
+    if agent1_mdd[time.clone() as usize].len() == 1
+        && agent2_mdd
+            .get(time.clone() as usize)
+            .unwrap_or(agent2_mdd.last().unwrap())
+            .len()
+            == 1
     {
         return ConflictCardinality::Cardinal;
     } else if agent1_mdd[time.clone() as usize].len() == 1
-        || agent2_mdd[time.clone() as usize].len() == 1
+        || agent2_mdd
+            .get(time.clone() as usize)
+            .unwrap_or(agent2_mdd.last().unwrap())
+            .len()
+            == 1
     {
         return ConflictCardinality::SemiCardinal;
     } else {

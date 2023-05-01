@@ -1,5 +1,6 @@
+use std::borrow::Borrow;
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
 use std::rc::Rc;
 
@@ -100,10 +101,11 @@ where
 
 pub fn a_star<T>(start: T) -> Result<AStarSolution<T>, SearchError>
 where
-    for<'a> T: AStarNode<'a> + Clone,
+    for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
 {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
     let mut nodes_expanded = 0;
+    let mut best_g = HashMap::<T, f64>::new();
     frontier.push(Reverse(HeapNode {
         node: start,
         prev: None,
@@ -112,7 +114,7 @@ where
         if frontier.is_empty() {
             return Err(SearchError::NotFound);
         }
-        let Reverse(current) = frontier.pop().expect("failed to pop from heap");
+        let Reverse(current) = frontier.pop().expect("heap should not be empty");
         let current = Rc::new(current);
         if current.node.is_goal() {
             return Ok(AStarSolution {
@@ -124,6 +126,10 @@ where
             Some(expand) => {
                 nodes_expanded += expand.len() as i32;
                 for neighbor in expand {
+                    if neighbor.g() >= *best_g.get(&*neighbor).unwrap_or(&f64::INFINITY) {
+                        continue;
+                    }
+                    best_g.insert(*neighbor.clone(), neighbor.g());
                     frontier.push(Reverse(HeapNode {
                         node: *neighbor,
                         prev: Some(Rc::clone(&current)),

@@ -169,6 +169,15 @@ fn test_cbs(
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
     vec![6, 20, 7, 23, 15]
 )]
+#[case::maze_128x128(
+    Some(CBSOptimisationConfig {
+        priotising_conflicts: true,
+        bypassing_conflicts: true,
+    }),
+    "tests/testdata/maps/maze-128-128-10.map",
+    "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
+    vec![10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+)]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
     #[case] map_file: &str,

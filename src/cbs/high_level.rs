@@ -5,7 +5,7 @@ use super::{
 use core::time;
 use std::{collections::HashMap, hash::Hash};
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct VertexConflict<'a> {
     pub agent1: &'a Agent,
     pub agent2: &'a Agent,
@@ -13,7 +13,7 @@ pub struct VertexConflict<'a> {
     pub location: (i32, i32),
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct EdgeConflict<'a> {
     pub agent1: &'a Agent,
     pub agent2: &'a Agent,
@@ -22,13 +22,13 @@ pub struct EdgeConflict<'a> {
     pub location2: (i32, i32),
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Conflict<'a> {
     Vertex(VertexConflict<'a>),
     Edge(EdgeConflict<'a>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Constraint<'a> {
     agent: &'a Agent,
     time: i32,
@@ -54,6 +54,28 @@ pub struct ConflictTreeNode<'a> {
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+}
+
+impl PartialEq for ConflictTreeNode<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.constraints == other.constraints
+            && self.agents == other.agents
+            && self.paths == other.paths
+            && self.conflicts == other.conflicts
+            && self.scenario == other.scenario
+    }
+}
+
+impl Eq for ConflictTreeNode<'_> {}
+
+impl Hash for ConflictTreeNode<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.constraints.hash(state);
+        self.agents.hash(state);
+        // self.paths.hash(state);
+        self.conflicts.hash(state);
+        self.scenario.hash(state);
+    }
 }
 
 impl<'a> ConflictTreeNode<'a> {

@@ -1,12 +1,21 @@
 use super::*;
+use std::hash::Hash;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct TestNode {
     id: String,
     score: f64,
     h: f64,
     expand: Vec<Box<TestNode>>,
 }
+
+impl Hash for TestNode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+impl Eq for TestNode {}
 
 impl AStarNode<'_> for TestNode {
     fn g(&self) -> f64 {
