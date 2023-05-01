@@ -33,7 +33,7 @@ impl TryFrom<String> for Grid {
                 }
                 if c == &'@' {
                     obstacles.push(LocationTime {
-                        location: (i as i32, j as i32),
+                        location: (j as i32, i as i32),
                         time: -1,
                     });
                 }
@@ -51,7 +51,7 @@ impl TryInto<String> for Grid {
         for i in 0..self.height {
             for j in 0..self.width {
                 if self.obstacles.contains(&LocationTime {
-                    location: (i, j),
+                    location: (j, i),
                     time: -1,
                 }) {
                     map.push('@');

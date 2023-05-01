@@ -6,7 +6,7 @@ use std::io::Read;
 #[case::clean_24x24("tests/testdata/maps/clean_24x24.map", 24, 24, vec![])]
 #[case::clean_24x24_crlf("tests/testdata/maps/clean_24x24_crlf.map", 24, 24, vec![])]
 #[case::clean_24x24_crlf("tests/testdata/maps/5x3_with_conflict.map", 5, 3, vec![
-    LocationTime { location: (3, 1), time: -1 },
+    LocationTime { location: (1, 3), time: -1 },
 ])]
 fn test_map_loading_saving(
     #[case] map_file_path: &str,
