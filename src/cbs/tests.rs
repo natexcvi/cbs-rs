@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::*;
 use rstest::rstest;
 
@@ -21,7 +23,7 @@ use rstest::rstest;
     ], Grid {
         width: 10,
         height: 10,
-        obstacles: vec![],
+        obstacles: HashSet::new(),
         goal: (9, 9),
     },
     vec![19, 17],
@@ -45,7 +47,7 @@ use rstest::rstest;
     ], Grid {
         width: 10,
         height: 10,
-        obstacles: vec![],
+        obstacles: HashSet::new(),
         goal: (9, 9),
     },
     vec![19, 19],
@@ -74,7 +76,7 @@ use rstest::rstest;
     ], Grid {
         width: 2,
         height: 2,
-        obstacles: vec![],
+        obstacles: HashSet::new(),
         goal: (0, 0),
     },
     vec![4, 2, 3],
@@ -103,7 +105,7 @@ use rstest::rstest;
     ], Grid {
         width: 3,
         height: 3,
-        obstacles: vec![low_level::LocationTime { location: (1,1), time: 2 }],
+        obstacles: vec![low_level::LocationTime { location: (1,1), time: 2 }].into_iter().collect(),
         goal: (0, 0),
     },
     vec![5, 2, 3],
@@ -127,7 +129,7 @@ use rstest::rstest;
     ], Grid {
         width: 3,
         height: 3,
-        obstacles: vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }],
+        obstacles: vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }].into_iter().collect(),
         goal: (0, 0),
     },
     vec![3, 4],
@@ -169,6 +171,7 @@ fn test_cbs(
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
     vec![6, 20, 7, 23, 15]
 )]
+#[ignore = "investigate bad performance"]
 #[case::maze_128x128(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,

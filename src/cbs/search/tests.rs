@@ -33,6 +33,10 @@ impl AStarNode<'_> for TestNode {
     fn expand(&self) -> Option<Vec<Box<Self>>> {
         Some(self.expand.iter().map(|x| x.clone()).collect())
     }
+
+    fn id(&self) -> String {
+        self.id.clone()
+    }
 }
 
 #[test]

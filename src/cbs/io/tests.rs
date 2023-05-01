@@ -20,13 +20,13 @@ fn test_map_loading_saving(
     let map = Grid::try_from(map_file_content).unwrap();
     assert_eq!(map.height, height);
     assert_eq!(map.width, width);
-    assert_eq!(map.obstacles, obstacles);
+    assert_eq!(map.obstacles, obstacles.clone().into_iter().collect());
 
     let map_file_content: String = map.try_into().unwrap();
     let map = Grid::try_from(map_file_content).unwrap();
     assert_eq!(map.height, height);
     assert_eq!(map.width, width);
-    assert_eq!(map.obstacles, obstacles);
+    assert_eq!(map.obstacles, obstacles.into_iter().collect());
 }
 
 #[rstest]

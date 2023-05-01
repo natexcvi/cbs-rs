@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::error::Error;
 use std::rc::Rc;
 
@@ -9,6 +9,7 @@ pub trait AStarNode<'a> {
     fn h(&'a self) -> f64;
     fn expand(&'a self) -> Option<Vec<Box<Self>>>;
     fn is_goal(&'a self) -> bool;
+    fn id(&'a self) -> String;
 }
 
 #[derive(Debug)]
@@ -50,7 +51,7 @@ where
     for<'a> T: AStarNode<'a> + Clone,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.node.g() == other.node.g()
+        self.node.g() == other.node.g() && self.node.h() == other.node.h()
     }
 }
 
@@ -104,8 +105,9 @@ where
     for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
 {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
+    let mut frontier_index = HashSet::<String>::new();
     let mut nodes_expanded = 0;
-    let mut best_g = HashMap::<T, f64>::new();
+    let mut best_g = HashMap::<String, f64>::new();
     frontier.push(Reverse(HeapNode {
         node: start,
         prev: None,
@@ -115,6 +117,7 @@ where
             return Err(SearchError::NotFound);
         }
         let Reverse(current) = frontier.pop().expect("heap should not be empty");
+        frontier_index.remove(&current.node.id());
         let current = Rc::new(current);
         if current.node.is_goal() {
             return Ok(AStarSolution {
@@ -126,23 +129,30 @@ where
             Some(expand) => {
                 nodes_expanded += expand.len() as i32;
                 for neighbor in expand {
-                    if neighbor.g() >= *best_g.get(&*neighbor).unwrap_or(&f64::INFINITY) {
+                    if neighbor.g() >= *best_g.get(&neighbor.id()).unwrap_or(&f64::INFINITY) {
                         continue;
                     }
-                    best_g.insert(*neighbor.clone(), neighbor.g());
+                    best_g.insert(neighbor.id(), neighbor.g());
+                    if frontier_index.contains(&neighbor.id()) {
+                        continue;
+                    }
                     frontier.push(Reverse(HeapNode {
-                        node: *neighbor,
+                        node: *neighbor.clone(),
                         prev: Some(Rc::clone(&current)),
                     }));
+                    frontier_index.insert(neighbor.id());
                 }
             }
-            None => frontier.push(Reverse(HeapNode {
-                node: current.node.clone(),
-                prev: match &current.prev {
-                    Some(prev) => Some(Rc::clone(prev)),
-                    None => None,
-                },
-            })),
+            None => {
+                frontier.push(Reverse(HeapNode {
+                    node: current.node.clone(),
+                    prev: match &current.prev {
+                        Some(prev) => Some(Rc::clone(prev)),
+                        None => None,
+                    },
+                }));
+                frontier_index.insert(current.node.id());
+            }
         }
     }
 }

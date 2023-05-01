@@ -3,7 +3,7 @@ use super::{
     search::AStarNode,
 };
 use core::time;
-use std::{collections::HashMap, hash::Hash};
+use std::{collections::{HashMap, HashSet}, hash::Hash};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct VertexConflict<'a> {
@@ -182,7 +182,7 @@ impl<'a> ConflictTreeNode<'a> {
             if self.paths.contains_key(agent) {
                 continue;
             }
-            let mut obstacles: Vec<LocationTime> = self
+            let mut obstacles: HashSet<LocationTime> = self
                 .constraints
                 .iter()
                 .filter(|c| c.agent == *agent)
@@ -191,7 +191,7 @@ impl<'a> ConflictTreeNode<'a> {
                     time: c.time,
                 })
                 .collect();
-            obstacles.append(&mut self.scenario.obstacles.clone());
+            obstacles.extend(&mut self.scenario.obstacles.clone().iter());
             let path = find_shortest_path(
                 Grid {
                     width: self.scenario.width,
@@ -274,6 +274,13 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             }
         }
         (self.post_expanded_callback)(self, &conflict, expanded)
+    }
+
+    fn id(&self) -> String {
+        format!(
+            "ConflictTreeNode({:?}, {:?}, {:?})",
+            self.paths, self.conflicts, self.constraints
+        )
     }
 }
 

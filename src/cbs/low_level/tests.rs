@@ -42,7 +42,9 @@ fn test_path_finding() {
                 location: (3, 3),
                 time: 0,
             },
-        ],
+        ]
+        .into_iter()
+        .collect(),
         goal: (4, 4),
     };
     let start = LocationTime {

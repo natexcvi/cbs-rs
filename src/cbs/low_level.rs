@@ -1,11 +1,17 @@
-use std::hash::Hash;
+use std::{collections::HashSet, hash::Hash};
 
 use super::search::{a_star, AStarNode};
 
-#[derive(Debug, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Eq, Clone, Copy)]
 pub struct LocationTime {
     pub location: (i32, i32),
     pub time: i32,
+}
+
+impl Hash for LocationTime {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.location.hash(state);
+    }
 }
 
 impl PartialEq for LocationTime {
@@ -15,12 +21,24 @@ impl PartialEq for LocationTime {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Grid {
     pub width: i32,
     pub height: i32,
-    pub obstacles: Vec<LocationTime>,
+    pub obstacles: HashSet<LocationTime>,
     pub goal: (i32, i32),
+}
+
+impl Hash for Grid {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.width.hash(state);
+        self.height.hash(state);
+        self.obstacles
+            .iter()
+            .collect::<Vec<&LocationTime>>()
+            .hash(state);
+        self.goal.hash(state);
+    }
 }
 
 impl Grid {
@@ -28,7 +46,7 @@ impl Grid {
         Grid {
             width,
             height,
-            obstacles,
+            obstacles: obstacles.into_iter().collect(),
             goal,
         }
     }
@@ -139,12 +157,16 @@ impl AStarNode<'_> for PathFindingNode<'_> {
         }
         Some(expanded)
     }
+
+    fn id(&self) -> String {
+        format!("{:?}", self.loc_time)
+    }
 }
 
 pub fn find_shortest_path(grid: Grid, start: LocationTime) -> Option<Vec<LocationTime>> {
     let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
     let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
-    let solution = a_star(start_node).expect("No path found");
+    let solution = a_star(start_node).expect("should find path");
     Some(solution.path.iter().map(|node| node.loc_time).collect())
 }
 

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::cbs::optimisations::conflict_prioritisation::pick_conflict;
 
 use super::*;
@@ -37,7 +39,7 @@ fn test_high_level() {
     let grid = Grid {
         width: 10,
         height: 10,
-        obstacles: vec![],
+        obstacles: HashSet::new(),
         goal: (9, 9),
     };
     let mut ctn = ConflictTreeNode::new(
