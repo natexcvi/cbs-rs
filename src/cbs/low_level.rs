@@ -11,6 +11,7 @@ pub struct LocationTime {
 impl Hash for LocationTime {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.location.hash(state);
+        self.time.hash(state);
     }
 }
 
@@ -144,6 +145,10 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                 && neighbour.location.1 >= 0
                 && neighbour.location.1 < self.grid.height
                 && !self.grid.obstacles.contains(neighbour)
+                && !self.grid.obstacles.contains(&LocationTime {
+                    location: neighbour.location,
+                    time: -1,
+                })
         });
         for neighbour in neigbours {
             let h = (neighbour.location.0 - self.grid.goal.0).abs()

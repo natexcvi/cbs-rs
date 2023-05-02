@@ -83,7 +83,7 @@ impl CBS {
         self.solved = true;
         match solution {
             Ok(solution) => {
-                self.high_level_expanded += solution.nodes_expanded as usize;
+                self.high_level_expanded += solution.nodes_generated as usize;
                 let last_node = solution.path.last().unwrap();
                 let mut paths = HashMap::<&Agent, Path>::new();
                 for agent in self.instance.agents.iter() {
