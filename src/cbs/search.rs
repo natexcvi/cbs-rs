@@ -80,7 +80,7 @@ where
     for<'a> T: AStarNode<'a> + Clone,
 {
     pub path: Vec<T>,
-    pub nodes_expanded: i32,
+    pub nodes_generated: i32,
 }
 
 fn reconstruct_path<T>(mut current: Rc<HeapNode<T>>) -> Vec<T>
@@ -120,7 +120,7 @@ where
         if current.node.is_goal() {
             return Ok(AStarSolution {
                 path: reconstruct_path(current),
-                nodes_expanded: nodes_generated,
+                nodes_generated,
             });
         }
         match current.node.expand() {
