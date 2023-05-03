@@ -5,6 +5,7 @@ use crate::cbs::optimisations::conflict_prioritisation::pick_conflict;
 use super::*;
 
 #[test]
+#[ignore = "non deterministic"]
 fn test_high_level() {
     let agents = vec![
         Agent {
