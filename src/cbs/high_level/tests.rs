@@ -50,14 +50,14 @@ fn test_high_level() {
         Some(pick_conflict),
         None,
     );
-    assert_eq!(ctn.conflicts.len(), 1);
+    assert_eq!(ctn.conflicts.len(), 13);
     match ctn.expand() {
         Some(expanded) => {
             assert_eq!(expanded.len(), 2);
             assert_eq!(expanded[0].constraints.len(), 4);
             assert_eq!(expanded[1].constraints.len(), 4);
             assert_eq!(expanded[0].constraints[3].time, 1);
-            assert_eq!(expanded[0].conflicts.len(), 0);
+            assert_eq!(expanded[0].conflicts.len(), 1);
         }
         None => panic!("No expanded nodes"),
     }

@@ -33,7 +33,7 @@ struct HeapNode<T>
 where
     for<'a> T: AStarNode<'a> + Clone,
 {
-    node: T,
+    node: Rc<T>,
     prev: Option<Rc<HeapNode<T>>>,
 }
 
@@ -41,7 +41,7 @@ impl<T> HeapNode<T>
 where
     for<'a> T: AStarNode<'a> + Clone,
 {
-    fn new(node: T) -> HeapNode<T> {
+    fn new(node: Rc<T>) -> HeapNode<T> {
         HeapNode { node, prev: None }
     }
 }
@@ -89,7 +89,7 @@ where
 {
     let mut path = Vec::<T>::new();
     loop {
-        path.push(current.node.clone());
+        path.push((*current.node).clone());
         if let Some(prev) = &current.prev {
             current = Rc::clone(prev);
         } else {
@@ -106,11 +106,14 @@ where
 {
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
     let mut nodes_generated = 0;
-    let mut best_g = HashMap::<String, f64>::new();
+    let mut best_g = HashMap::<Rc<T>, f64>::new();
+    let start = Rc::new(start);
+    let start_g = start.g();
     frontier.push(Reverse(HeapNode {
-        node: start,
+        node: Rc::clone(&start),
         prev: None,
     }));
+    best_g.insert(start, start_g);
     loop {
         if frontier.is_empty() {
             return Err(SearchError::NotFound);
@@ -119,19 +122,23 @@ where
         let current = Rc::new(current);
         if current.node.is_goal() {
             return Ok(AStarSolution {
-                path: reconstruct_path(current),
+                path: reconstruct_path(Rc::clone(&current)),
                 nodes_generated,
             });
+        }
+        if current.node.g() > *best_g.get(&current.node).unwrap_or(&f64::INFINITY) {
+            continue;
         }
         match current.node.expand() {
             Some(expand) => {
                 for neighbor in expand {
-                    if neighbor.g() >= *best_g.get(&neighbor.id()).unwrap_or(&f64::INFINITY) {
+                    let neighbor = Rc::new(*neighbor);
+                    if neighbor.g() >= *best_g.get(&neighbor).unwrap_or(&f64::INFINITY) {
                         continue;
                     }
-                    best_g.insert(neighbor.id(), neighbor.g());
+                    best_g.insert(Rc::clone(&neighbor), neighbor.g());
                     frontier.push(Reverse(HeapNode {
-                        node: *neighbor.clone(),
+                        node: Rc::clone(&neighbor),
                         prev: Some(Rc::clone(&current)),
                     }));
                     nodes_generated += 1;
@@ -139,7 +146,7 @@ where
             }
             None => {
                 frontier.push(Reverse(HeapNode {
-                    node: current.node.clone(),
+                    node: Rc::clone(&current.node),
                     prev: match &current.prev {
                         Some(prev) => Some(Rc::clone(prev)),
                         None => None,

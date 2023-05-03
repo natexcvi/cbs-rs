@@ -17,8 +17,7 @@ impl Hash for LocationTime {
 
 impl PartialEq for LocationTime {
     fn eq(&self, other: &Self) -> bool {
-        self.location == other.location
-            && (self.time == other.time || self.time == -1 || other.time == -1)
+        self.location == other.location && self.time == other.time
     }
 }
 
@@ -74,7 +73,7 @@ struct PathFindingNode<'a> {
 
 impl PartialEq for PathFindingNode<'_> {
     fn eq(&self, other: &Self) -> bool {
-        self.loc_time == other.loc_time && self.grid == other.grid
+        self.loc_time == other.loc_time //&& self.grid == other.grid
     }
 }
 
@@ -111,55 +110,34 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     }
 
     fn expand(&self) -> Option<Vec<Box<Self>>> {
-        let mut expanded = Vec::<Box<Self>>::new();
-        let mut neigbours: Vec<LocationTime> = vec![
-            // move left
-            LocationTime {
-                location: (self.loc_time.location.0 - 1, self.loc_time.location.1),
+        let expanded = vec![(0, 0), (0, 1), (1, 0), (0, -1), (-1, 0)]
+            .iter()
+            .map(|(x, y)| LocationTime {
+                location: (self.loc_time.location.0 + x, self.loc_time.location.1 + y),
                 time: self.loc_time.time + 1,
-            },
-            // move right
-            LocationTime {
-                location: (self.loc_time.location.0 + 1, self.loc_time.location.1),
-                time: self.loc_time.time + 1,
-            },
-            // move down
-            LocationTime {
-                location: (self.loc_time.location.0, self.loc_time.location.1 - 1),
-                time: self.loc_time.time + 1,
-            },
-            // move up
-            LocationTime {
-                location: (self.loc_time.location.0, self.loc_time.location.1 + 1),
-                time: self.loc_time.time + 1,
-            },
-            // wait
-            LocationTime {
-                location: self.loc_time.location,
-                time: self.loc_time.time + 1,
-            },
-        ];
-        neigbours.retain(|neighbour| {
-            neighbour.location.0 >= 0
-                && neighbour.location.0 < self.grid.width
-                && neighbour.location.1 >= 0
-                && neighbour.location.1 < self.grid.height
-                && !self.grid.obstacles.contains(neighbour)
-                && !self.grid.obstacles.contains(&LocationTime {
-                    location: neighbour.location,
-                    time: -1,
-                })
-        });
-        for neighbour in neigbours {
-            let h = (neighbour.location.0 - self.grid.goal.0).abs()
-                + (neighbour.location.1 - self.grid.goal.1).abs();
-            expanded.push(Box::new(PathFindingNode::new(
-                neighbour,
-                self.g + 1.0,
-                h as f64,
-                self.grid,
-            )));
-        }
+            })
+            .filter(|neighbour| {
+                neighbour.location.0 >= 0
+                    && neighbour.location.0 < self.grid.width
+                    && neighbour.location.1 >= 0
+                    && neighbour.location.1 < self.grid.height
+                    && !self.grid.obstacles.contains(neighbour)
+                    && !self.grid.obstacles.contains(&LocationTime {
+                        location: neighbour.location,
+                        time: -1,
+                    })
+            })
+            .map(|neighbour| -> Box<PathFindingNode> {
+                let h = (neighbour.location.0 - self.grid.goal.0).abs()
+                    + (neighbour.location.1 - self.grid.goal.1).abs();
+                Box::new(PathFindingNode::new(
+                    neighbour,
+                    self.g + 1.0,
+                    h as f64,
+                    self.grid,
+                ))
+            })
+            .collect::<Vec<Box<Self>>>();
         Some(expanded)
     }
 

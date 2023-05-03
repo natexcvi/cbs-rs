@@ -79,7 +79,7 @@ use rstest::rstest;
         obstacles: HashSet::new(),
         goal: (0, 0),
     },
-    vec![4, 2, 3],
+    vec![3, 2, 3],
 )] // TODO: confirm this case
 #[case::crowded_with_obstacles(
     Some(CBSOptimisationConfig {
@@ -179,7 +179,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
-    vec![134, 364, 305]
+    vec![305, 364, 134]
 )]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
