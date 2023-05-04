@@ -1,3 +1,4 @@
+use log::debug;
 use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
@@ -122,7 +123,7 @@ where
         let Reverse(current) = frontier.pop().expect("heap should not be empty");
         let current = Rc::new(current);
         if current.node.is_goal() {
-            println!("A* took {:?}", t0.elapsed());
+            debug!("A* took {:?}", t0.elapsed());
             return Ok(AStarSolution {
                 path: reconstruct_path(Rc::clone(&current)),
                 nodes_generated,

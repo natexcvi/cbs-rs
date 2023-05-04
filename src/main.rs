@@ -17,6 +17,7 @@ struct Args {
 }
 
 fn main() {
+    env_logger::init();
     let args = Args::parse();
     let cbs_instance = CBSInstance::from_files(&args.map_file, &args.agents_file)
         .expect("should be valid scenario files");
