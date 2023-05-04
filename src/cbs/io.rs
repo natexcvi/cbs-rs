@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::Read,
 };
@@ -112,6 +113,24 @@ fn load_scenario_file(scen_file: &str) -> Result<Vec<Agent>, String> {
         });
     }
     Ok(agents)
+}
+
+pub fn path_to_string(agent_id: &str, path: &Path) -> String {
+    let mut path_str = String::new();
+    path_str.push_str(&format!("Agent {}: ", agent_id));
+    for (_, (x, y)) in path.iter().enumerate() {
+        path_str.push_str(&format!("({},{})->", y, x));
+    }
+    path_str
+}
+
+pub fn paths_to_string(paths: &HashMap<&Agent, Path>) -> String {
+    let mut paths_str = String::new();
+    for (agent, path) in paths.iter() {
+        paths_str.push_str(&path_to_string(&agent.id, path));
+        paths_str.push('\n');
+    }
+    paths_str
 }
 
 #[cfg(test)]

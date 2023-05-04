@@ -7,7 +7,7 @@ use self::{
 };
 
 mod high_level;
-mod io;
+pub(crate) mod io;
 mod low_level;
 mod optimisations;
 pub mod search;

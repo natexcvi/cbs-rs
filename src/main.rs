@@ -1,5 +1,6 @@
 mod cbs;
 
+use cbs::io::paths_to_string;
 use cbs::{CBSInstance, CBS};
 use clap::Parser;
 
@@ -24,7 +25,7 @@ fn main() {
     let mut cbs = CBS::new(cbs_instance, None);
     match cbs.solve() {
         Ok(paths) => {
-            println!("{:?}", paths);
+            println!("{}", paths_to_string(&paths));
         }
         Err(e) => panic!("CBS Error: {:?}", e),
     }
