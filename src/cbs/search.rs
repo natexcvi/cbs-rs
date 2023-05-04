@@ -104,6 +104,7 @@ pub fn a_star<T>(start: T) -> Result<AStarSolution<T>, SearchError>
 where
     for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
 {
+    let t0 = std::time::Instant::now();
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
     let mut nodes_generated = 0;
     let mut best_g = HashMap::<Rc<T>, f64>::new();
@@ -121,6 +122,7 @@ where
         let Reverse(current) = frontier.pop().expect("heap should not be empty");
         let current = Rc::new(current);
         if current.node.is_goal() {
+            println!("A* took {:?}", t0.elapsed());
             return Ok(AStarSolution {
                 path: reconstruct_path(Rc::clone(&current)),
                 nodes_generated,

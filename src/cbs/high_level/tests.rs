@@ -37,12 +37,7 @@ fn test_high_level() {
         }),
     ];
     let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();
-    let grid = Grid {
-        width: 10,
-        height: 10,
-        obstacles: HashSet::new(),
-        goal: (9, 9),
-    };
+    let grid = Grid::new(10, 10, vec![], (9, 9));
     let mut ctn = ConflictTreeNode::new(
         agents.iter().collect(),
         constraints,

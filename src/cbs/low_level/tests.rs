@@ -2,10 +2,10 @@ use super::*;
 
 #[test]
 fn test_path_finding() {
-    let grid = Grid {
-        width: 5,
-        height: 5,
-        obstacles: vec![
+    let grid = Grid::new(
+        5,
+        5,
+        vec![
             LocationTime {
                 location: (1, 1),
                 time: 0,
@@ -45,8 +45,8 @@ fn test_path_finding() {
         ]
         .into_iter()
         .collect(),
-        goal: (4, 4),
-    };
+        (4, 4),
+    );
     let start = LocationTime {
         location: (0, 0),
         time: 0,

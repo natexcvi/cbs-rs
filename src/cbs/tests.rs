@@ -20,12 +20,12 @@ use rstest::rstest;
             start: (0, 1),
             goal: (9, 8),
         },
-    ], Grid {
-        width: 10,
-        height: 10,
-        obstacles: HashSet::new(),
-        goal: (9, 9),
-    },
+    ], Grid::new(
+        10,
+        10,
+        Vec::new(),
+        (9, 9),
+    ),
     vec![19, 17],
 )]
 #[case::opposite_corners(
@@ -44,12 +44,12 @@ use rstest::rstest;
             start: (0, 0),
             goal: (9, 9),
         },
-    ], Grid {
-        width: 10,
-        height: 10,
-        obstacles: HashSet::new(),
-        goal: (9, 9),
-    },
+    ], Grid::new(
+        10,
+        10,
+        Vec::new(),
+        (9, 9),
+    ),
     vec![19, 19],
 )]
 #[case::crowded(
@@ -73,12 +73,12 @@ use rstest::rstest;
             start: (0, 1),
             goal: (1, 0),
         },
-    ], Grid {
-        width: 2,
-        height: 2,
-        obstacles: HashSet::new(),
-        goal: (0, 0),
-    },
+    ], Grid::new(
+        2,
+        2,
+        Vec::new(),
+        (0, 0),
+    ),
     vec![3, 2, 3],
 )] // TODO: confirm this case
 #[case::crowded_with_obstacles(
@@ -102,12 +102,12 @@ use rstest::rstest;
             start: (0, 1),
             goal: (1, 0),
         },
-    ], Grid {
-        width: 3,
-        height: 3,
-        obstacles: vec![low_level::LocationTime { location: (1,1), time: 2 }].into_iter().collect(),
-        goal: (0, 0),
-    },
+    ], Grid::new(
+        3,
+        3,
+        vec![low_level::LocationTime { location: (1,1), time: 2 }],
+        (0, 0),
+    ),
     vec![5, 2, 3],
 )]
 #[case::must_wait(
@@ -126,12 +126,12 @@ use rstest::rstest;
             start: (1, 0),
             goal: (1, 2),
         },
-    ], Grid {
-        width: 3,
-        height: 3,
-        obstacles: vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }].into_iter().collect(),
-        goal: (0, 0),
-    },
+    ], Grid::new(
+        3,
+        3,
+        vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }],
+        (0, 0),
+    ),
     vec![3, 4],
 )]
 fn test_cbs(

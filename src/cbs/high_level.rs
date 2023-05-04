@@ -3,7 +3,10 @@ use super::{
     search::AStarNode,
 };
 use core::time;
-use std::{collections::{HashMap, HashSet}, hash::Hash};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct VertexConflict<'a> {
@@ -193,12 +196,12 @@ impl<'a> ConflictTreeNode<'a> {
                 .collect();
             obstacles.extend(&mut self.scenario.obstacles.clone().iter());
             let path = find_shortest_path(
-                Grid {
-                    width: self.scenario.width,
-                    height: self.scenario.height,
-                    obstacles,
-                    goal: agent.goal,
-                },
+                Grid::new(
+                    self.scenario.width,
+                    self.scenario.height,
+                    obstacles.into_iter().collect(),
+                    agent.goal,
+                ),
                 LocationTime {
                     location: agent.start,
                     time: 0,

@@ -27,6 +27,7 @@ pub struct Grid {
     pub height: i32,
     pub obstacles: HashSet<LocationTime>,
     pub goal: (i32, i32),
+    obstacle_map: Vec<Vec<Vec<i32>>>,
 }
 
 impl Hash for Grid {
@@ -43,12 +44,27 @@ impl Hash for Grid {
 
 impl Grid {
     pub fn new(width: i32, height: i32, obstacles: Vec<LocationTime>, goal: (i32, i32)) -> Grid {
-        Grid {
+        let mut grid = Grid {
             width,
             height,
             obstacles: obstacles.into_iter().collect(),
             goal,
+            obstacle_map: vec![vec![Vec::new(); height as usize]; width as usize],
+        };
+        grid.compute_obstacle_map();
+        grid
+    }
+
+    fn compute_obstacle_map(&mut self) {
+        for obstacle in &self.obstacles {
+            self.obstacle_map[obstacle.location.0 as usize][obstacle.location.1 as usize]
+                .push(obstacle.time);
         }
+        self.obstacle_map.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|cell| {
+                cell.sort();
+            })
+        });
     }
 
     pub fn is_valid_location(&self, location: &(i32, i32)) -> bool {
@@ -56,10 +72,7 @@ impl Grid {
             && location.0 < self.width
             && location.1 >= 0
             && location.1 < self.height
-            && !self.obstacles.contains(&LocationTime {
-                location: location.clone(),
-                time: -1,
-            })
+            && !self.obstacle_map[location.0 as usize][location.1 as usize].contains(&-1)
     }
 }
 
@@ -117,15 +130,16 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                 time: self.loc_time.time + 1,
             })
             .filter(|neighbour| {
-                neighbour.location.0 >= 0
-                    && neighbour.location.0 < self.grid.width
-                    && neighbour.location.1 >= 0
-                    && neighbour.location.1 < self.grid.height
-                    && !self.grid.obstacles.contains(neighbour)
-                    && !self.grid.obstacles.contains(&LocationTime {
-                        location: neighbour.location,
-                        time: -1,
-                    })
+                self.grid.is_valid_location(&neighbour.location)
+                    && !self
+                        .grid
+                        .obstacle_map
+                        .get(neighbour.location.0 as usize)
+                        .unwrap()
+                        .get(neighbour.location.1 as usize)
+                        .unwrap()
+                        .binary_search(&neighbour.time)
+                        .is_ok()
             })
             .map(|neighbour| -> Box<PathFindingNode> {
                 let h = (neighbour.location.0 - self.grid.goal.0).abs()
