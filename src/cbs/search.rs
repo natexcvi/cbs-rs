@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::error::Error;
+use std::hash::Hash;
 use std::rc::Rc;
 
 pub trait AStarNode<'a> {
@@ -61,7 +62,19 @@ where
     for<'a> T: AStarNode<'a> + Clone,
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (self.node.g() + self.node.h()).partial_cmp(&(other.node.g() + other.node.h()))
+        (self.node.g() + self.node.h())
+            .partial_cmp(&(other.node.g() + other.node.h()))
+            .map(|o| {
+                if o == std::cmp::Ordering::Equal {
+                    self.node
+                        .g()
+                        .partial_cmp(&other.node.g())
+                        .expect("if g() + h() is comparable, g() should be comparable")
+                        .reverse()
+                } else {
+                    o
+                }
+            })
     }
 }
 
@@ -72,7 +85,11 @@ where
     for<'a> T: AStarNode<'a> + Clone,
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (self.node.g() + self.node.h()).total_cmp(&(other.node.g() + other.node.h()))
+        let o = (self.node.g() + self.node.h()).total_cmp(&(other.node.g() + other.node.h()));
+        match o {
+            std::cmp::Ordering::Equal => self.node.g().total_cmp(&other.node.h()).reverse(),
+            _ => o,
+        }
     }
 }
 
@@ -123,7 +140,11 @@ where
         let Reverse(current) = frontier.pop().expect("heap should not be empty");
         let current = Rc::new(current);
         if current.node.is_goal() {
-            debug!("A* took {:?}", t0.elapsed());
+            debug!(
+                "A* took {:?} - {:} nodes generated",
+                t0.elapsed(),
+                nodes_generated
+            );
             return Ok(AStarSolution {
                 path: reconstruct_path(Rc::clone(&current)),
                 nodes_generated,
@@ -156,6 +177,37 @@ where
                     },
                 }));
             }
+        }
+    }
+}
+
+pub fn dfs<T, S>(
+    visited: &mut HashSet<T>,
+    result: &mut S,
+    processor: &dyn Fn(&mut S, &T, &Option<T>) -> bool,
+    cur: T,
+    parent: Option<T>,
+    neighbours: &dyn Fn(&T) -> Vec<T>,
+) where
+    T: Hash + Eq + Clone,
+{
+    let cur_neighbours = neighbours(&cur);
+    let should_expand = processor(result, &cur, &parent);
+    visited.insert(cur.clone());
+    if !should_expand {
+        return;
+    }
+
+    for next in cur_neighbours {
+        if !visited.contains(&next) {
+            dfs(
+                visited,
+                result,
+                processor,
+                next,
+                Some(cur.clone()),
+                neighbours,
+            );
         }
     }
 }
