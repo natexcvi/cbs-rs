@@ -30,6 +30,7 @@ impl Error for CBSError {}
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
+    two_direction_subsolver: bool,
 }
 
 pub struct CBSInstance {
@@ -55,6 +56,7 @@ impl CBS {
             optimisation_config: optimisation_config.unwrap_or(CBSOptimisationConfig {
                 priotising_conflicts: false,
                 bypassing_conflicts: false,
+                two_direction_subsolver: false,
             }),
         }
     }
@@ -75,6 +77,11 @@ impl CBS {
             },
             if self.optimisation_config.bypassing_conflicts {
                 Some(optimisations::conflict_bypassing::bypass_conflict)
+            } else {
+                None
+            },
+            if self.optimisation_config.two_direction_subsolver {
+                Some(optimisations::two_direction_subsolver::plan_two_direction_agents)
             } else {
                 None
             },

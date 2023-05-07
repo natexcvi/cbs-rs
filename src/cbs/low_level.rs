@@ -160,11 +160,14 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     }
 }
 
-pub fn find_shortest_path(grid: Grid, start: LocationTime) -> Option<Vec<LocationTime>> {
+pub fn find_shortest_path(grid: Grid, start: LocationTime) -> Option<(Vec<LocationTime>, usize)> {
     let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
     let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
     let solution = a_star(start_node).expect("should find path");
-    Some(solution.path.iter().map(|node| node.loc_time).collect())
+    Some((
+        solution.path.iter().map(|node| node.loc_time).collect(),
+        solution.nodes_generated as usize,
+    ))
 }
 
 mod tests;

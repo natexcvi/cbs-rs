@@ -73,6 +73,7 @@ fn test_bypass_conflict(
         &scenario,
         None,
         None,
+        None,
     );
     let conflict = parent.conflicts[conflict_idx].clone();
     let children: Vec<ConflictTreeNode> = children_paths
@@ -87,6 +88,7 @@ fn test_bypass_conflict(
                     .map(|(i, path)| (&agents[i], path))
                     .collect(),
                 &scenario,
+                None,
                 None,
                 None,
             )

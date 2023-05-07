@@ -50,13 +50,15 @@ pub struct Agent {
 #[derive(Clone)]
 pub struct ConflictTreeNode<'a> {
     constraints: Vec<Box<Constraint<'a>>>,
-    agents: Vec<&'a Agent>,
-    pub paths: HashMap<&'a Agent, Path>,
-    pub conflicts: Vec<Box<Conflict<'a>>>,
+    pub(crate) agents: Vec<&'a Agent>,
+    pub(crate) paths: HashMap<&'a Agent, Path>,
+    pub(crate) conflicts: Vec<Box<Conflict<'a>>>,
     scenario: &'a Grid,
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+    node_preprocessor: fn(&mut Self),
+    low_level_generated: usize,
 }
 
 impl PartialEq for ConflictTreeNode<'_> {
@@ -75,7 +77,6 @@ impl Hash for ConflictTreeNode<'_> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.constraints.hash(state);
         self.agents.hash(state);
-        // self.paths.hash(state);
         self.conflicts.hash(state);
         self.scenario.hash(state);
     }
@@ -93,6 +94,7 @@ impl<'a> ConflictTreeNode<'a> {
         post_expanded_callback: Option<
             fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
         >,
+        node_preprocessor: Option<fn(&mut Self)>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -102,6 +104,8 @@ impl<'a> ConflictTreeNode<'a> {
             scenario,
             conflict_picker: |_, _, conflicts| Some(conflicts[0].clone()),
             post_expanded_callback: |_, _, expanded| Some(expanded), // TODO: replace with optimization
+            node_preprocessor: |_| (),
+            low_level_generated: 0,
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -109,6 +113,10 @@ impl<'a> ConflictTreeNode<'a> {
         if let Some(callback) = post_expanded_callback {
             ctn.post_expanded_callback = callback;
         }
+        if let Some(preprocessor) = node_preprocessor {
+            ctn.node_preprocessor = preprocessor;
+        }
+        (ctn.node_preprocessor)(&mut ctn);
         ctn.compute_paths();
         ctn.compute_conflicts();
         ctn
@@ -185,15 +193,7 @@ impl<'a> ConflictTreeNode<'a> {
             if self.paths.contains_key(agent) {
                 continue;
             }
-            let mut obstacles: HashSet<LocationTime> = self
-                .constraints
-                .iter()
-                .filter(|c| c.agent == *agent)
-                .map(|c| LocationTime {
-                    location: c.location,
-                    time: c.time,
-                })
-                .collect();
+            let mut obstacles = self.constraints_to_obstacles(agent);
             obstacles.extend(&mut self.scenario.obstacles.clone().iter());
             let path = find_shortest_path(
                 Grid::new(
@@ -207,9 +207,29 @@ impl<'a> ConflictTreeNode<'a> {
                     time: 0,
                 },
             );
-            self.paths
-                .insert(agent, path.unwrap().iter().map(|n| n.location).collect());
+            self.paths.insert(
+                agent,
+                path.map(|(path, nodes_generated)| {
+                    self.low_level_generated += nodes_generated;
+                    path
+                })
+                .unwrap()
+                .iter()
+                .map(|n| n.location)
+                .collect(),
+            );
         }
+    }
+
+    fn constraints_to_obstacles(&self, agent: &&Agent) -> HashSet<LocationTime> {
+        self.constraints
+            .iter()
+            .filter(|c| c.agent == *agent)
+            .map(|c| LocationTime {
+                location: c.location,
+                time: c.time,
+            })
+            .collect()
     }
 }
 
@@ -251,6 +271,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.scenario,
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
+                        Some(self.node_preprocessor),
                     )));
                 }
             }
@@ -272,6 +293,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.scenario,
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
+                        Some(self.node_preprocessor),
                     )));
                 }
             }

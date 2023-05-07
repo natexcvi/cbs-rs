@@ -45,6 +45,7 @@ fn test_high_level() {
         &grid,
         Some(pick_conflict),
         None,
+        None,
     );
     assert_eq!(ctn.conflicts.len(), 13);
     match ctn.expand() {
