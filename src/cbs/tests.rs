@@ -8,7 +8,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     vec![
         Agent {
@@ -33,7 +33,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     vec![
         Agent {
@@ -58,7 +58,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     vec![
         Agent {
@@ -88,7 +88,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     vec![
         Agent {
@@ -118,7 +118,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     vec![
         Agent {
@@ -171,7 +171,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     "tests/testdata/maps/empty-16-16.map",
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
@@ -182,7 +182,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        two_direction_subsolver: false,
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
