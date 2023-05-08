@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::cbs::high_level::{Conflict, ConflictTreeNode, Path};
+use crate::cbs::high_level::{ConflictTreeNode, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
 use crate::cbs::search::dfs;
 use crate::cbs::Agent;
@@ -151,9 +151,6 @@ where
 {
     let mut diagonals = HashMap::<Diagonal, Vec<&Agent>>::new();
     for agent in agents {
-        if ((agent.goal.0 - agent.start.0) >= 0) != ((agent.goal.1 - agent.start.1) >= 0) {
-            continue;
-        }
         let goal_down_right = agent.goal.0 >= agent.start.0 && agent.goal.1 >= agent.start.1;
         let goal_up_left = agent.goal.0 <= agent.start.0 && agent.goal.1 <= agent.start.1;
         let goal_down_left = agent.goal.0 <= agent.start.0 && agent.goal.1 >= agent.start.1;
@@ -161,25 +158,25 @@ where
             Diagonal {
                 direction: DiagonalDirection::Up,
                 half: DiagonalHalf::Left,
-                offset: agent.start.0.max(agent.start.1),
+                offset: agent.start.0 + agent.start.1,
             }
         } else if goal_down_right {
             Diagonal {
-                direction: DiagonalDirection::Down,
+                direction: DiagonalDirection::Up,
                 half: DiagonalHalf::Right,
-                offset: (scenario.width - agent.start.0 - 1).max(agent.start.1),
+                offset: agent.start.0 + agent.start.1,
             }
         } else if goal_down_left {
             Diagonal {
                 direction: DiagonalDirection::Down,
                 half: DiagonalHalf::Left,
-                offset: (scenario.width - agent.start.0 - 1).max(agent.start.1),
+                offset: (scenario.width - agent.start.0 - 1) + agent.start.1,
             }
         } else {
             Diagonal {
-                direction: DiagonalDirection::Up,
+                direction: DiagonalDirection::Down,
                 half: DiagonalHalf::Right,
-                offset: agent.start.0.max(agent.start.1),
+                offset: (scenario.width - agent.start.0 - 1) + agent.start.1,
             }
         };
         diagonals
@@ -191,4 +188,82 @@ where
         agents.sort_by_key(|agent| agent.start.0);
     }
     diagonals
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(
+        vec![
+            Agent {
+                start: (0, 2),
+                goal: (9, 9),
+                id: "0".to_string(),
+            },
+            Agent {
+                start: (2, 0),
+                goal: (9, 7),
+                id: "1".to_string(),
+            },
+            Agent {
+                start: (1, 1),
+                goal: (9, 8),
+                id: "2".to_string(),
+            },
+            Agent {
+                start: (4, 4),
+                goal: (7, 7),
+                id: "3".to_string(),
+            },
+        ],
+        Grid::new(10, 10, vec![], (0, 0)),
+        vec![
+            (
+                Diagonal {
+                    direction: DiagonalDirection::Up,
+                    half: DiagonalHalf::Right,
+                    offset: 2,
+                },
+                vec![0, 1, 2],
+            ),
+            (
+                Diagonal {
+                    direction: DiagonalDirection::Up,
+                    half: DiagonalHalf::Right,
+                    offset: 8,
+                },
+                vec![3],
+            ),
+        ].into_iter().collect(),
+    )]
+    fn test_find_diagonal_sets(
+        #[case] agents: Vec<Agent>,
+        #[case] scenario: Grid,
+        #[case] expected: HashMap<Diagonal, Vec<usize>>,
+    ) {
+        let borrowed_agents = agents.iter().collect::<Vec<_>>();
+        let mut exp_diag_sets = expected
+            .into_iter()
+            .map(|(diagonal, diag_agents)| {
+                (
+                    diagonal,
+                    diag_agents
+                        .iter()
+                        .map(|agent_idx| &agents[*agent_idx])
+                        .collect(),
+                )
+            })
+            .collect::<HashMap<Diagonal, Vec<&Agent>>>();
+        exp_diag_sets
+            .values_mut()
+            .for_each(|agents| agents.sort_by_key(|agent| agent.id.clone()));
+        let mut diag_sets = find_diagonal_sets(borrowed_agents.iter(), &scenario);
+        diag_sets
+            .values_mut()
+            .for_each(|agents| agents.sort_by_key(|agent| agent.id.clone()));
+        assert_eq!(diag_sets, exp_diag_sets,);
+    }
 }
