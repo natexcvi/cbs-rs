@@ -185,9 +185,11 @@ pub fn dfs<T, S>(
     visited: &mut HashSet<T>,
     result: &mut S,
     processor: &dyn Fn(&mut S, &T, &Option<T>) -> bool,
+    on_backtrack: &dyn Fn(&mut S, &T, &Option<T>),
     cur: T,
     parent: Option<T>,
     neighbours: &dyn Fn(&T) -> Vec<T>,
+    is_goal: &dyn Fn(&T) -> bool,
 ) where
     T: Hash + Eq + Clone,
 {
@@ -197,6 +199,9 @@ pub fn dfs<T, S>(
     if !should_expand {
         return;
     }
+    if is_goal(&cur) {
+        return;
+    }
 
     for next in cur_neighbours {
         if !visited.contains(&next) {
@@ -204,10 +209,13 @@ pub fn dfs<T, S>(
                 visited,
                 result,
                 processor,
+                on_backtrack,
                 next,
                 Some(cur.clone()),
                 neighbours,
+                is_goal,
             );
+            on_backtrack(result, &cur, &parent);
         }
     }
 }

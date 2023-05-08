@@ -53,7 +53,7 @@ pub struct ConflictTreeNode<'a> {
     pub(crate) agents: Vec<&'a Agent>,
     pub(crate) paths: HashMap<&'a Agent, Path>,
     pub(crate) conflicts: Vec<Box<Conflict<'a>>>,
-    scenario: &'a Grid,
+    pub(crate) scenario: &'a Grid,
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
