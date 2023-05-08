@@ -57,8 +57,15 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
         },
     );
 
+    let mut aux_grid = Grid::new(
+        node.scenario.width,
+        node.scenario.height,
+        node.scenario.obstacles.clone().into_iter().collect(),
+        node.scenario.goal,
+    );
     for (diagonal, agents) in chosen_diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
+        let mut target_obstacles = Vec::<LocationTime>::new();
         for agent in agents {
             let mut visited = HashSet::<LocationTime>::new();
             let mut path: Path = vec![agent.start];
@@ -67,9 +74,6 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                 &mut path,
                 &|path, cur, _| {
                     path.push(cur.location.clone());
-                    if path.last().unwrap_or(&agent.start) == &agent.goal {
-                        return false;
-                    }
                     true
                 },
                 &|path, _, _| {
@@ -89,7 +93,7 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                             time: cur.time + 1,
                         })
                         .filter(|loc| {
-                            node.scenario.is_valid_location(&loc.location)
+                            aux_grid.is_valid_location(&loc.location)
                                 && is_in_start_goal_box(loc, agent)
                         })
                         .collect()
@@ -97,8 +101,13 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                 &|cur| cur.location == agent.goal,
             );
             paths.insert(agent, path);
+            target_obstacles.push(LocationTime {
+                location: agent.goal.clone(),
+                time: -1,
+            });
         }
         node.paths.extend(paths);
+        aux_grid.obstacles.extend(target_obstacles);
     }
 }
 
