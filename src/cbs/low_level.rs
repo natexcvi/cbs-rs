@@ -72,7 +72,11 @@ impl Grid {
             && location.0 < self.width
             && location.1 >= 0
             && location.1 < self.height
-            && !self.obstacle_map[location.0 as usize][location.1 as usize].contains(&-1)
+            // && !self.obstacle_map[location.0 as usize][location.1 as usize].contains(&-1)
+            && !self.obstacles.contains(&LocationTime {
+                location: *location,
+                time: -1,
+            })
     }
 }
 

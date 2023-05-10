@@ -68,7 +68,7 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
         let mut target_obstacles = Vec::<LocationTime>::new();
         for agent in agents {
             let mut visited = HashSet::<LocationTime>::new();
-            let mut path: Path = vec![agent.start];
+            let mut path: Path = vec![];
             let found = dfs(
                 &mut visited,
                 &mut path,

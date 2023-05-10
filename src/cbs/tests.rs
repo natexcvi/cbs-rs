@@ -6,7 +6,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        two_direction_subsolver: true,
     }),
     vec![
         Agent {
@@ -31,7 +31,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        two_direction_subsolver: true,
     }),
     vec![
         Agent {
@@ -56,7 +56,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        two_direction_subsolver: true,
     }),
     vec![
         Agent {
@@ -86,7 +86,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        two_direction_subsolver: true,
     }),
     vec![
         Agent {
@@ -116,7 +116,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        two_direction_subsolver: true,
     }),
     vec![
         Agent {
