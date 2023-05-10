@@ -41,67 +41,50 @@ impl Diagonal {
 
 pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
-    let (direction, half) = most_populous_diag_type(&diagonals);
 
-    let mut chosen_diagonals = diagonals
-        .into_iter()
-        .filter(|(diagonal, _)| diagonal.direction == direction && diagonal.half == half)
-        .collect::<Vec<(Diagonal, Vec<&Agent>)>>();
+    let diagonal_kinds = vec![
+        (DiagonalDirection::Up, DiagonalHalf::Left),
+        (DiagonalDirection::Up, DiagonalHalf::Right),
+        (DiagonalDirection::Down, DiagonalHalf::Left),
+        (DiagonalDirection::Down, DiagonalHalf::Right),
+    ];
 
-    chosen_diagonals.sort_by_key(
-        |(diagonal, _)| match (&diagonal.direction, &diagonal.half) {
-            (DiagonalDirection::Up, DiagonalHalf::Left) => diagonal.offset,
-            (DiagonalDirection::Up, DiagonalHalf::Right) => -diagonal.offset,
-            (DiagonalDirection::Down, DiagonalHalf::Left) => -diagonal.offset,
-            (DiagonalDirection::Down, DiagonalHalf::Right) => diagonal.offset,
-        },
-    );
+    diagonal_kinds.iter().for_each(|(direction, half)| {
+        let mut chosen_diagonals = diagonals
+            .iter()
+            .filter(|(diagonal, _)| diagonal.direction == *direction && diagonal.half == *half)
+            .collect::<Vec<(&Diagonal, &Vec<&Agent>)>>();
+        chosen_diagonals.sort_by_key(
+            |(diagonal, _)| match (&diagonal.direction, &diagonal.half) {
+                (DiagonalDirection::Up, DiagonalHalf::Left) => diagonal.offset,
+                (DiagonalDirection::Up, DiagonalHalf::Right) => -diagonal.offset,
+                (DiagonalDirection::Down, DiagonalHalf::Left) => -diagonal.offset,
+                (DiagonalDirection::Down, DiagonalHalf::Right) => diagonal.offset,
+            },
+        );
+        plan_diagonal_kind(node, chosen_diagonals);
+    });
+}
 
+fn plan_diagonal_kind<'a, 'b>(
+    node: &'a mut ConflictTreeNode<'b>,
+    diagonals: Vec<(&Diagonal, &Vec<&'b Agent>)>,
+) where
+    'b: 'a,
+{
     let mut aux_grid = Grid::new(
         node.scenario.width,
         node.scenario.height,
         node.scenario.obstacles.clone().into_iter().collect(),
         node.scenario.goal,
     );
-    'diag_loop: for (diagonal, agents) in chosen_diagonals.iter() {
+    'diag_loop: for (diagonal, agents) in diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
         let mut planned_path_obstacles = HashSet::<LocationTime>::new();
-        for agent in agents {
-            let mut visited = HashSet::<LocationTime>::new();
-            let mut path: Path = vec![];
-            let found = dfs(
-                &mut visited,
-                &mut path,
-                &|path, cur, _| {
-                    path.push(cur.location.clone());
-                    true
-                },
-                &|path, _, _| {
-                    path.pop();
-                },
-                LocationTime {
-                    location: agent.start.clone(),
-                    time: 0,
-                },
-                None,
-                &|cur| {
-                    diagonal
-                        .direction_vecs()
-                        .iter()
-                        .map(|(dx, dy)| LocationTime {
-                            location: (cur.location.0 + dx, cur.location.1 + dy),
-                            time: cur.time + 1,
-                        })
-                        .filter(|loc| {
-                            aux_grid.is_valid_location_time(&loc)
-                                && is_in_start_goal_box(loc, agent)
-                                && !planned_path_obstacles.contains(loc)
-                        })
-                        .collect()
-                },
-                &|cur| cur.location == agent.goal,
-            );
+        for agent in agents.iter() {
+            let (path, found) =
+                plan_agent_path(agent, diagonal, &aux_grid, &planned_path_obstacles);
             if !found {
                 continue 'diag_loop;
             }
@@ -120,6 +103,49 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
         node.paths.extend(paths);
         aux_grid.obstacles.extend(target_obstacles);
     }
+}
+
+fn plan_agent_path(
+    agent: &&Agent,
+    diagonal: &Diagonal,
+    aux_grid: &Grid,
+    planned_path_obstacles: &HashSet<LocationTime>,
+) -> (Vec<(i32, i32)>, bool) {
+    let mut visited = HashSet::<LocationTime>::new();
+    let mut path: Path = vec![];
+    let found = dfs(
+        &mut visited,
+        &mut path,
+        &|path, cur, _| {
+            path.push(cur.location.clone());
+            true
+        },
+        &|path, _, _| {
+            path.pop();
+        },
+        LocationTime {
+            location: agent.start.clone(),
+            time: 0,
+        },
+        None,
+        &|cur| {
+            diagonal
+                .direction_vecs()
+                .iter()
+                .map(|(dx, dy)| LocationTime {
+                    location: (cur.location.0 + dx, cur.location.1 + dy),
+                    time: cur.time + 1,
+                })
+                .filter(|loc| {
+                    aux_grid.is_valid_location_time(&loc)
+                        && is_in_start_goal_box(loc, agent)
+                        && !planned_path_obstacles.contains(loc)
+                })
+                .collect()
+        },
+        &|cur| cur.location == agent.goal,
+    );
+    (path, found)
 }
 
 fn is_in_start_goal_box(loc_time: &LocationTime, agent: &Agent) -> bool {
