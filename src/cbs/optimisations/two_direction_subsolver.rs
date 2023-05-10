@@ -63,13 +63,13 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
         node.scenario.obstacles.clone().into_iter().collect(),
         node.scenario.goal,
     );
-    for (diagonal, agents) in chosen_diagonals.iter() {
+    'diag_loop: for (diagonal, agents) in chosen_diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
         for agent in agents {
             let mut visited = HashSet::<LocationTime>::new();
             let mut path: Path = vec![agent.start];
-            dfs(
+            let found = dfs(
                 &mut visited,
                 &mut path,
                 &|path, cur, _| {
@@ -100,6 +100,9 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                 },
                 &|cur| cur.location == agent.goal,
             );
+            if !found {
+                continue 'diag_loop;
+            }
             paths.insert(agent, path);
             target_obstacles.push(LocationTime {
                 location: agent.goal.clone(),
@@ -185,7 +188,7 @@ where
             .push(agent);
     }
     for (_, agents) in diagonals.iter_mut() {
-        agents.sort_by_key(|agent| agent.start.0);
+        agents.sort_by_key(|agent| -agent.start.0);
     }
     diagonals
 }

@@ -108,6 +108,32 @@ fn test_a_star() {
     &|cur: &String| cur == "g",
     vec!["a", "d", "g"].into_iter().map(|s| s.to_string()).collect(),
 )]
+#[case(
+    vec![].into_iter().collect::<HashSet<String>>(),
+    &|path: &mut Vec<String>, cur: &String, parent: &Option<String>| {
+        path.push(cur.clone());
+        true
+    },
+    &|path: &mut Vec<String>, cur: &String, _: &Option<String>| {
+        if cur != "g" {
+            path.pop();
+        }
+    },
+    "a".to_string(),
+    None,
+    &|cur: &String| -> Vec<String> {
+        if cur == "a" {
+            return vec!["b", "c", "d"].into_iter().map(|s| s.to_string()).collect();
+        } else if cur == "d" {
+            return vec!["e", "g"].into_iter().map(|s| s.to_string()).collect();
+        } else if cur == "c" {
+            return vec!["g"].into_iter().map(|s| s.to_string()).collect();
+        }
+        return vec![];
+    },
+    &|cur: &String| cur == "g",
+    vec!["a", "c", "g"].into_iter().map(|s| s.to_string()).collect(),
+)]
 fn test_dfs(
     #[case] init_visited: HashSet<String>,
     #[case] processor: &dyn Fn(&mut Vec<String>, &String, &Option<String>) -> bool,
