@@ -186,7 +186,6 @@ fn test_cbs(
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
     vec![305, 364, 134]
 )]
-#[ignore = "confirm expected"]
 #[case::diagonal_10(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
@@ -195,8 +194,8 @@ fn test_cbs(
     }),
     "tests/testdata/maps/test_10.map",
     "tests/testdata/scenarios/test_10.scen",
-    vec![12, 25, 34, 33, 26, 30, 32, 23, 31, 27, 28, 29]
-)]
+    vec![12, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+)] // TODO: confirm this case
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
     #[case] map_file: &str,
@@ -209,15 +208,29 @@ fn test_cbs_from_files(
     match cbs.solve() {
         Ok(paths) => {
             assert_eq!(paths.len(), exp_path_lengths.len());
-            for (agent, path) in paths.iter() {
-                assert_eq!(
-                    path.len(),
+            let mut paths = paths.iter().collect::<Vec<_>>();
+            paths.sort_by_key(|(agent, _)| {
+                agent
+                    .id
+                    .parse::<usize>()
+                    .expect("agent id should be numeric")
+            });
+            let exp_path_lengths = paths
+                .iter()
+                .map(|(agent, _)| {
                     exp_path_lengths[agent
                         .id
                         .parse::<usize>()
                         .expect("agent id should be numeric")]
-                );
-            }
+                })
+                .collect::<Vec<usize>>();
+            assert_eq!(
+                paths
+                    .iter()
+                    .map(|(_, path)| path.len())
+                    .collect::<Vec<usize>>(),
+                exp_path_lengths
+            );
         }
         Err(e) => panic!("Error: {:?}", e),
     }

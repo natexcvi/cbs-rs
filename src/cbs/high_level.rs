@@ -2,7 +2,6 @@ use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::AStarNode,
 };
-use core::time;
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
@@ -38,6 +37,20 @@ pub struct Constraint<'a> {
     location: (i32, i32),
 }
 
+impl<'a> Constraint<'a> {
+    pub fn agent(&self) -> &Agent {
+        self.agent
+    }
+
+    pub fn time(&self) -> i32 {
+        self.time
+    }
+
+    pub fn location(&self) -> (i32, i32) {
+        self.location
+    }
+}
+
 pub type Path = Vec<(i32, i32)>;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -49,7 +62,7 @@ pub struct Agent {
 
 #[derive(Clone)]
 pub struct ConflictTreeNode<'a> {
-    constraints: Vec<Box<Constraint<'a>>>,
+    pub(crate) constraints: Vec<Box<Constraint<'a>>>,
     pub(crate) agents: Vec<&'a Agent>,
     pub(crate) paths: HashMap<&'a Agent, Path>,
     pub(crate) conflicts: Vec<Box<Conflict<'a>>>,

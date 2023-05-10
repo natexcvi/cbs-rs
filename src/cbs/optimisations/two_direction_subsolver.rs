@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::cbs::high_level::{ConflictTreeNode, Path};
+use crate::cbs::high_level::{ConflictTreeNode, Constraint, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
 use crate::cbs::search::dfs;
 use crate::cbs::Agent;
@@ -83,8 +83,17 @@ fn plan_diagonal_kind<'a, 'b>(
         let mut target_obstacles = Vec::<LocationTime>::new();
         let mut planned_path_obstacles = HashSet::<LocationTime>::new();
         for agent in agents.iter() {
-            let (path, found) =
-                plan_agent_path(agent, diagonal, &aux_grid, &planned_path_obstacles);
+            let mut constraint_obstacles = node
+                .constraints
+                .iter()
+                .filter(|constraint| constraint.agent() == *agent)
+                .map(|constraint| LocationTime {
+                    location: constraint.location(),
+                    time: constraint.time(),
+                })
+                .collect::<HashSet<LocationTime>>();
+            constraint_obstacles.extend(planned_path_obstacles.iter());
+            let (path, found) = plan_agent_path(agent, diagonal, &aux_grid, &constraint_obstacles);
             if !found {
                 continue 'diag_loop;
             }
@@ -109,7 +118,7 @@ fn plan_agent_path(
     agent: &&Agent,
     diagonal: &Diagonal,
     aux_grid: &Grid,
-    planned_path_obstacles: &HashSet<LocationTime>,
+    additional_obstacles: &HashSet<LocationTime>,
 ) -> (Vec<(i32, i32)>, bool) {
     let mut visited = HashSet::<LocationTime>::new();
     let mut path: Path = vec![];
@@ -139,7 +148,7 @@ fn plan_agent_path(
                 .filter(|loc| {
                     aux_grid.is_valid_location_time(&loc)
                         && is_in_start_goal_box(loc, agent)
-                        && !planned_path_obstacles.contains(loc)
+                        && !additional_obstacles.contains(loc)
                 })
                 .collect()
         },

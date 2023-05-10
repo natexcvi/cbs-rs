@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::cbs::optimisations::conflict_prioritisation::pick_conflict;
 
 use super::*;
@@ -38,7 +36,7 @@ fn test_high_level() {
     ];
     let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();
     let grid = Grid::new(10, 10, vec![], (9, 9));
-    let mut ctn = ConflictTreeNode::new(
+    let ctn = ConflictTreeNode::new(
         agents.iter().collect(),
         constraints,
         precomputed_paths,
