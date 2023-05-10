@@ -160,7 +160,7 @@ fn test_cbs(
                 );
             }
         }
-        Err(e) => panic!("Error: {:?}", e),
+        Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
 
@@ -185,6 +185,17 @@ fn test_cbs(
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
     vec![305, 364, 134]
+)]
+#[ignore = "confirm expected"]
+#[case::diagonal_10(
+    Some(CBSOptimisationConfig {
+        priotising_conflicts: true,
+        bypassing_conflicts: true,
+        two_direction_subsolver: false,
+    }),
+    "tests/testdata/maps/test_10.map",
+    "tests/testdata/scenarios/test_10.scen",
+    vec![12, 25, 34, 33, 26, 30, 32, 23, 31, 27, 28, 29]
 )]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
