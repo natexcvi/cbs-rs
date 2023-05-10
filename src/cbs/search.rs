@@ -190,22 +190,23 @@ pub fn dfs<T, S>(
     parent: Option<T>,
     neighbours: &dyn Fn(&T) -> Vec<T>,
     is_goal: &dyn Fn(&T) -> bool,
-) where
+) -> bool
+where
     T: Hash + Eq + Clone,
 {
     let cur_neighbours = neighbours(&cur);
     let should_expand = processor(result, &cur, &parent);
     visited.insert(cur.clone());
     if !should_expand {
-        return;
+        return false;
     }
     if is_goal(&cur) {
-        return;
+        return true;
     }
 
     for next in cur_neighbours {
         if !visited.contains(&next) {
-            dfs(
+            if dfs(
                 visited,
                 result,
                 processor,
@@ -214,10 +215,13 @@ pub fn dfs<T, S>(
                 Some(cur.clone()),
                 neighbours,
                 is_goal,
-            );
+            ) {
+                return true;
+            }
             on_backtrack(result, &cur, &parent);
         }
     }
+    return false;
 }
 
 #[cfg(test)]

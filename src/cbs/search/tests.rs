@@ -1,4 +1,5 @@
 use super::*;
+use rstest::rstest;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,4 +81,55 @@ fn test_a_star() {
     assert_eq!(result.path[result.path.len() - 2].id, "c");
     assert_eq!(result.path[result.path.len() - 3].id, "b");
     assert_eq!(result.path[result.path.len() - 4].id, "a");
+}
+
+#[rstest]
+#[case(
+    vec![].into_iter().collect::<HashSet<String>>(),
+    &|path: &mut Vec<String>, cur: &String, parent: &Option<String>| {
+        path.push(cur.clone());
+        true
+    },
+    &|path: &mut Vec<String>, cur: &String, _: &Option<String>| {
+        if cur != "g" {
+            path.pop();
+        }
+    },
+    "a".to_string(),
+    None,
+    &|cur: &String| -> Vec<String> {
+        if cur == "a" {
+            return vec!["b", "c", "d"].into_iter().map(|s| s.to_string()).collect();
+        } else if cur == "d" {
+            return vec!["e", "g"].into_iter().map(|s| s.to_string()).collect();
+        }
+        return vec![];
+    },
+    &|cur: &String| cur == "g",
+    vec!["a", "d", "g"].into_iter().map(|s| s.to_string()).collect(),
+)]
+fn test_dfs(
+    #[case] init_visited: HashSet<String>,
+    #[case] processor: &dyn Fn(&mut Vec<String>, &String, &Option<String>) -> bool,
+    #[case] on_backtrack: &dyn Fn(&mut Vec<String>, &String, &Option<String>),
+    #[case] cur: String,
+    #[case] parent: Option<String>,
+    #[case] neighbours: &dyn Fn(&String) -> Vec<String>,
+    #[case] is_goal: &dyn Fn(&String) -> bool,
+    #[case] expected: Vec<String>,
+) {
+    let mut visited = HashSet::new();
+    visited.extend(init_visited);
+    let mut path = vec![];
+    dfs(
+        &mut visited,
+        &mut path,
+        processor,
+        on_backtrack,
+        cur,
+        parent,
+        neighbours,
+        is_goal,
+    );
+    assert_eq!(path, expected);
 }
