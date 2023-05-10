@@ -21,7 +21,7 @@ impl PartialEq for LocationTime {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid {
     pub width: i32,
     pub height: i32,
@@ -68,15 +68,22 @@ impl Grid {
     }
 
     pub fn is_valid_location(&self, location: &(i32, i32)) -> bool {
-        location.0 >= 0
-            && location.0 < self.width
-            && location.1 >= 0
-            && location.1 < self.height
-            // && !self.obstacle_map[location.0 as usize][location.1 as usize].contains(&-1)
+        self.is_valid_location_time(&LocationTime {
+            location: *location,
+            time: -1,
+        })
+    }
+
+    pub fn is_valid_location_time(&self, loc_time: &LocationTime) -> bool {
+        loc_time.location.0 >= 0
+            && loc_time.location.0 < self.width
+            && loc_time.location.1 >= 0
+            && loc_time.location.1 < self.height
             && !self.obstacles.contains(&LocationTime {
-                location: *location,
+                location: loc_time.location,
                 time: -1,
             })
+            && !self.obstacles.contains(loc_time)
     }
 }
 

@@ -66,6 +66,7 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
     'diag_loop: for (diagonal, agents) in chosen_diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
+        let mut planned_path_obstacles = HashSet::<LocationTime>::new();
         for agent in agents {
             let mut visited = HashSet::<LocationTime>::new();
             let mut path: Path = vec![];
@@ -93,8 +94,9 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                             time: cur.time + 1,
                         })
                         .filter(|loc| {
-                            aux_grid.is_valid_location(&loc.location)
+                            aux_grid.is_valid_location_time(&loc)
                                 && is_in_start_goal_box(loc, agent)
+                                && !planned_path_obstacles.contains(loc)
                         })
                         .collect()
                 },
@@ -103,6 +105,12 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
             if !found {
                 continue 'diag_loop;
             }
+            path.iter().enumerate().for_each(|(i, loc)| {
+                planned_path_obstacles.insert(LocationTime {
+                    location: loc.clone(),
+                    time: i as i32,
+                });
+            });
             paths.insert(agent, path);
             target_obstacles.push(LocationTime {
                 location: agent.goal.clone(),
