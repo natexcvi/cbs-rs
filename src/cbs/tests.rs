@@ -153,12 +153,18 @@ fn test_cbs(
     match cbs.solve() {
         Ok(paths) => {
             assert_eq!(paths.len(), exp_path_lengths.len());
-            for (agent, path) in paths.iter() {
-                assert_eq!(
-                    path.len(),
-                    exp_path_lengths[agents.iter().position(|a| a == *agent).unwrap()]
-                );
-            }
+            let exp_path_lengths = exp_path_lengths
+                .into_iter()
+                .enumerate()
+                .map(|(i, l)| (&agents[i], l))
+                .collect::<HashMap<_, _>>();
+            assert_eq!(
+                paths
+                    .into_iter()
+                    .map(|(a, p)| (a, p.len()))
+                    .collect::<HashMap<&Agent, usize>>(),
+                exp_path_lengths
+            );
         }
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
