@@ -40,7 +40,12 @@ impl TryFrom<String> for Grid {
                 }
             }
         }
-        Ok(Grid::new(width, height, obstacles, (0, 0)))
+        Ok(Grid::new(
+            width,
+            height,
+            Grid::to_conditional_obstacles(obstacles),
+            (0, 0),
+        ))
     }
 
     type Error = String;
@@ -51,7 +56,7 @@ impl TryInto<String> for Grid {
         let mut map = String::new();
         for i in 0..self.height {
             for j in 0..self.width {
-                if self.obstacles.contains(&LocationTime {
+                if self.obstacles.contains_key(&LocationTime {
                     location: (j, i),
                     time: -1,
                 }) {

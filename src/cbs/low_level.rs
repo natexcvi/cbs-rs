@@ -1,4 +1,7 @@
-use std::{collections::HashSet, hash::Hash};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 use super::search::{a_star, AStarNode};
 
@@ -21,11 +24,17 @@ impl PartialEq for LocationTime {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+struct Obstacle {
+    loc_time: LocationTime,
+    coming_from: Option<(i32, i32)>,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid {
     pub width: i32,
     pub height: i32,
-    pub obstacles: HashSet<LocationTime>,
+    pub obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
     pub goal: (i32, i32),
     obstacle_map: Vec<Vec<Vec<i32>>>,
 }
@@ -34,20 +43,25 @@ impl Hash for Grid {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.width.hash(state);
         self.height.hash(state);
-        self.obstacles
-            .iter()
-            .collect::<Vec<&LocationTime>>()
-            .hash(state);
+        self.obstacles.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state);
+        });
         self.goal.hash(state);
     }
 }
 
 impl Grid {
-    pub fn new(width: i32, height: i32, obstacles: Vec<LocationTime>, goal: (i32, i32)) -> Grid {
+    pub fn new(
+        width: i32,
+        height: i32,
+        obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
+        goal: (i32, i32),
+    ) -> Grid {
         let mut grid = Grid {
             width,
             height,
-            obstacles: obstacles.into_iter().collect(),
+            obstacles,
             goal,
             obstacle_map: vec![vec![Vec::new(); height as usize]; width as usize],
         };
@@ -55,8 +69,17 @@ impl Grid {
         grid
     }
 
+    pub fn to_conditional_obstacles(
+        obstacles: Vec<LocationTime>,
+    ) -> HashMap<LocationTime, Vec<(i32, i32)>> {
+        obstacles
+            .into_iter()
+            .map(|loc_time| (loc_time, Vec::new()))
+            .collect()
+    }
+
     fn compute_obstacle_map(&mut self) {
-        for obstacle in &self.obstacles {
+        for (obstacle, _) in &self.obstacles {
             self.obstacle_map[obstacle.location.0 as usize][obstacle.location.1 as usize]
                 .push(obstacle.time);
         }
@@ -79,11 +102,21 @@ impl Grid {
             && loc_time.location.0 < self.width
             && loc_time.location.1 >= 0
             && loc_time.location.1 < self.height
-            && !self.obstacles.contains(&LocationTime {
+            // permament obstacles
+            && !self.is_obstacle(&LocationTime {
                 location: loc_time.location,
                 time: -1,
             })
-            && !self.obstacles.contains(loc_time)
+            // dynamic obstacles
+            && !self.is_obstacle(loc_time)
+    }
+
+    fn is_obstacle(&self, loc_time: &LocationTime) -> bool {
+        let coming_from = self.obstacles.get(loc_time);
+        match coming_from {
+            Some(coming_from) => coming_from.is_empty() || coming_from.contains(&loc_time.location),
+            None => false,
+        }
     }
 }
 

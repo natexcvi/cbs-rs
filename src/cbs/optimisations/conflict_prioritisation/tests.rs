@@ -4,7 +4,7 @@ use rstest::rstest;
 
 #[rstest]
 #[case::simple(
-    crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
+    crate::cbs::low_level::Grid::new(10, 10, Grid::to_conditional_obstacles(vec![]), (0, 0)),
     (0, 0),
     (5, 5),
     10,
@@ -23,7 +23,7 @@ use rstest::rstest;
     ])
 )]
 #[case::goal_unreachable_error(
-    crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0)),
+    crate::cbs::low_level::Grid::new(10, 10, Grid::to_conditional_obstacles(vec![]), (0, 0)),
     (0, 0),
     (5, 6),
     10,
@@ -104,7 +104,8 @@ fn test_pick_conflict(
     #[case] conflicts: Vec<MockVertexConflict>,
     #[case] expected_idx: Option<usize>,
 ) {
-    let grid = crate::cbs::low_level::Grid::new(10, 10, vec![], (0, 0));
+    let grid =
+        crate::cbs::low_level::Grid::new(10, 10, Grid::to_conditional_obstacles(vec![]), (0, 0));
     let mut path_map =
         HashMap::<&crate::cbs::high_level::Agent, crate::cbs::high_level::Path>::new();
     let mut agents = Vec::<crate::cbs::high_level::Agent>::new();

@@ -22,7 +22,7 @@ use rstest::rstest;
     ], Grid::new(
         10,
         10,
-        Vec::new(),
+        Grid::to_conditional_obstacles(Vec::new()),
         (9, 9),
     ),
     vec![19, 17],
@@ -47,7 +47,7 @@ use rstest::rstest;
     ], Grid::new(
         10,
         10,
-        Vec::new(),
+        Grid::to_conditional_obstacles(Vec::new()),
         (9, 9),
     ),
     vec![19, 19],
@@ -77,7 +77,7 @@ use rstest::rstest;
     ], Grid::new(
         2,
         2,
-        Vec::new(),
+        Grid::to_conditional_obstacles(Vec::new()),
         (0, 0),
     ),
     vec![3, 2, 3],
@@ -107,7 +107,7 @@ use rstest::rstest;
     ], Grid::new(
         3,
         3,
-        vec![low_level::LocationTime { location: (1,1), time: 2 }],
+        Grid::to_conditional_obstacles(vec![low_level::LocationTime { location: (1,1), time: 2 }]),
         (0, 0),
     ),
     vec![5, 2, 3],
@@ -132,7 +132,7 @@ use rstest::rstest;
     ], Grid::new(
         3,
         3,
-        vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }],
+        Grid::to_conditional_obstacles(vec![low_level::LocationTime { location: (2,0), time: -1 }, low_level::LocationTime { location: (0,2), time: -1 }]),
         (0, 0),
     ),
     vec![3, 4],

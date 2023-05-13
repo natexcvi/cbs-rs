@@ -61,7 +61,7 @@ fn test_bypass_conflict(
             goal: path[path.len() - 1],
         });
     }
-    let scenario = Grid::new(10, 5, vec![], (0, 0));
+    let scenario = Grid::new(10, 5, Grid::to_conditional_obstacles(vec![]), (0, 0));
     let parent = ConflictTreeNode::new(
         agents.iter().collect(),
         vec![],

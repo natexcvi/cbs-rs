@@ -110,7 +110,7 @@ fn plan_diagonal_kind<'a, 'b>(
             });
         }
         node.paths.extend(paths);
-        aux_grid.obstacles.extend(target_obstacles);
+        aux_grid.obstacles.extend(Grid::to_conditional_obstacles(target_obstacles));
     }
 }
 

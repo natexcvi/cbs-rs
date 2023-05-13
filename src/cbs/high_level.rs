@@ -207,7 +207,7 @@ impl<'a> ConflictTreeNode<'a> {
                 continue;
             }
             let mut obstacles = self.constraints_to_obstacles(agent);
-            obstacles.extend(&mut self.scenario.obstacles.clone().iter());
+            obstacles.extend(self.scenario.obstacles.clone().into_iter());
             let path = find_shortest_path(
                 Grid::new(
                     self.scenario.width,
@@ -234,13 +234,18 @@ impl<'a> ConflictTreeNode<'a> {
         }
     }
 
-    fn constraints_to_obstacles(&self, agent: &&Agent) -> HashSet<LocationTime> {
+    fn constraints_to_obstacles(&self, agent: &&Agent) -> HashMap<LocationTime, Vec<(i32, i32)>> {
         self.constraints
             .iter()
             .filter(|c| c.agent == *agent)
-            .map(|c| LocationTime {
-                location: c.location,
-                time: c.time,
+            .map(|c| {
+                (
+                    LocationTime {
+                        location: c.location,
+                        time: c.time,
+                    },
+                    Vec::new(),
+                )
             })
             .collect()
     }

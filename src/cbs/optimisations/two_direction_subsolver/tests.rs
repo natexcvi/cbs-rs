@@ -25,7 +25,7 @@ use rstest::rstest;
             id: "3".to_string(),
         },
     ],
-    Grid::new(10, 10, vec![], (0, 0)),
+    Grid::new(10, 10, Grid::to_conditional_obstacles(vec![]), (0, 0)),
     vec![
         (
             Diagonal {

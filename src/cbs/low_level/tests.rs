@@ -5,46 +5,48 @@ fn test_path_finding() {
     let grid = Grid::new(
         5,
         5,
-        vec![
-            LocationTime {
-                location: (1, 1),
-                time: 0,
-            },
-            LocationTime {
-                location: (1, 2),
-                time: 0,
-            },
-            LocationTime {
-                location: (1, 3),
-                time: 0,
-            },
-            LocationTime {
-                location: (2, 1),
-                time: 0,
-            },
-            LocationTime {
-                location: (2, 2),
-                time: 0,
-            },
-            LocationTime {
-                location: (2, 3),
-                time: 0,
-            },
-            LocationTime {
-                location: (3, 1),
-                time: 0,
-            },
-            LocationTime {
-                location: (3, 2),
-                time: 0,
-            },
-            LocationTime {
-                location: (3, 3),
-                time: 0,
-            },
-        ]
-        .into_iter()
-        .collect(),
+        Grid::to_conditional_obstacles(
+            vec![
+                LocationTime {
+                    location: (1, 1),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (1, 2),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (1, 3),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (2, 1),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (2, 2),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (2, 3),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (3, 1),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (3, 2),
+                    time: 0,
+                },
+                LocationTime {
+                    location: (3, 3),
+                    time: 0,
+                },
+            ]
+            .into_iter()
+            .collect(),
+        ),
         (4, 4),
     );
     let start = LocationTime {
