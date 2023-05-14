@@ -110,7 +110,9 @@ fn plan_diagonal_kind<'a, 'b>(
             });
         }
         node.paths.extend(paths);
-        aux_grid.obstacles.extend(Grid::to_conditional_obstacles(target_obstacles));
+        aux_grid
+            .obstacles
+            .extend(Grid::to_conditional_obstacles(target_obstacles));
     }
 }
 
@@ -146,7 +148,7 @@ fn plan_agent_path(
                     time: cur.time + 1,
                 })
                 .filter(|loc| {
-                    aux_grid.is_valid_location_time(&loc)
+                    aux_grid.is_valid_location_time(&loc, &cur.location)
                         && is_in_start_goal_box(loc, agent)
                         && !additional_obstacles.contains(loc)
                 })

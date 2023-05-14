@@ -35,6 +35,7 @@ pub struct Constraint<'a> {
     agent: &'a Agent,
     time: i32,
     location: (i32, i32),
+    prev_location: Option<(i32, i32)>,
 }
 
 impl<'a> Constraint<'a> {
@@ -207,7 +208,12 @@ impl<'a> ConflictTreeNode<'a> {
                 continue;
             }
             let mut obstacles = self.constraints_to_obstacles(agent);
-            obstacles.extend(self.scenario.obstacles.clone().into_iter());
+            self.scenario.obstacles.iter().for_each(|(loc, prevs)| {
+                obstacles
+                    .entry(*loc)
+                    .or_insert(vec![])
+                    .extend(prevs.clone());
+            });
             let path = find_shortest_path(
                 Grid::new(
                     self.scenario.width,
@@ -244,7 +250,10 @@ impl<'a> ConflictTreeNode<'a> {
                         location: c.location,
                         time: c.time,
                     },
-                    Vec::new(),
+                    match c.prev_location {
+                        Some(prev_location) => vec![prev_location],
+                        None => vec![],
+                    },
                 )
             })
             .collect()
@@ -277,6 +286,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         agent,
                         time: vc.time,
                         location: vc.location,
+                        prev_location: None,
                     };
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));
@@ -299,6 +309,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         agent,
                         time: ec.time,
                         location: if i == 0 { ec.location1 } else { ec.location2 },
+                        prev_location: Some(if i == 0 { ec.location2 } else { ec.location1 }),
                     };
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));

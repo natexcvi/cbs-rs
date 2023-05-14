@@ -22,16 +22,19 @@ fn test_high_level() {
             agent: &agents[0],
             time: 1,
             location: (1, 0),
+            prev_location: None,
         }),
         Box::new(Constraint {
             agent: &agents[1],
             time: 1,
             location: (1, 1),
+            prev_location: None,
         }),
         Box::new(Constraint {
             agent: &agents[1],
             time: 1,
             location: (0, 2),
+            prev_location: None,
         }),
     ];
     let precomputed_paths = HashMap::<&Agent, Vec<(i32, i32)>>::new();

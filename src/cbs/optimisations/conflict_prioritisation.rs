@@ -90,7 +90,7 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, M
                 (node.location.0, node.location.1 - 1),
                 (node.location.0, node.location.1 + 1),
             ];
-            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell));
+            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell, &node_location));
             for neighbour in neighbouring_cells {
                 if nodes.contains_key(&neighbour) {
                     continue;
@@ -135,7 +135,7 @@ fn mdd(agent: &Agent, scenario: &Grid, c: i32) -> Result<Vec<Vec<(i32, i32)>>, M
                 (node.location.0, node.location.1 - 1),
                 (node.location.0, node.location.1 + 1),
             ];
-            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell));
+            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell, &node_location));
             for neighbour in neighbouring_cells {
                 if !nodes.contains_key(&neighbour) || nodes[&neighbour].visited {
                     continue;

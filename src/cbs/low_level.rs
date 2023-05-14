@@ -36,7 +36,6 @@ pub struct Grid {
     pub height: i32,
     pub obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
     pub goal: (i32, i32),
-    obstacle_map: Vec<Vec<Vec<i32>>>,
 }
 
 impl Hash for Grid {
@@ -58,15 +57,12 @@ impl Grid {
         obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
         goal: (i32, i32),
     ) -> Grid {
-        let mut grid = Grid {
+        Grid {
             width,
             height,
             obstacles,
             goal,
-            obstacle_map: vec![vec![Vec::new(); height as usize]; width as usize],
-        };
-        grid.compute_obstacle_map();
-        grid
+        }
     }
 
     pub fn to_conditional_obstacles(
@@ -78,26 +74,21 @@ impl Grid {
             .collect()
     }
 
-    fn compute_obstacle_map(&mut self) {
-        for (obstacle, _) in &self.obstacles {
-            self.obstacle_map[obstacle.location.0 as usize][obstacle.location.1 as usize]
-                .push(obstacle.time);
-        }
-        self.obstacle_map.iter_mut().for_each(|row| {
-            row.iter_mut().for_each(|cell| {
-                cell.sort();
-            })
-        });
+    pub fn is_valid_location(&self, location: &(i32, i32), prev_location: &(i32, i32)) -> bool {
+        self.is_valid_location_time(
+            &LocationTime {
+                location: *location,
+                time: -1,
+            },
+            prev_location,
+        )
     }
 
-    pub fn is_valid_location(&self, location: &(i32, i32)) -> bool {
-        self.is_valid_location_time(&LocationTime {
-            location: *location,
-            time: -1,
-        })
-    }
-
-    pub fn is_valid_location_time(&self, loc_time: &LocationTime) -> bool {
+    pub fn is_valid_location_time(
+        &self,
+        loc_time: &LocationTime,
+        prev_location: &(i32, i32),
+    ) -> bool {
         loc_time.location.0 >= 0
             && loc_time.location.0 < self.width
             && loc_time.location.1 >= 0
@@ -106,15 +97,15 @@ impl Grid {
             && !self.is_obstacle(&LocationTime {
                 location: loc_time.location,
                 time: -1,
-            })
+            }, prev_location)
             // dynamic obstacles
-            && !self.is_obstacle(loc_time)
+            && !self.is_obstacle(loc_time, prev_location)
     }
 
-    fn is_obstacle(&self, loc_time: &LocationTime) -> bool {
+    fn is_obstacle(&self, loc_time: &LocationTime, prev_location: &(i32, i32)) -> bool {
         let coming_from = self.obstacles.get(loc_time);
         match coming_from {
-            Some(coming_from) => coming_from.is_empty() || coming_from.contains(&loc_time.location),
+            Some(coming_from) => coming_from.is_empty() || coming_from.contains(&prev_location),
             None => false,
         }
     }
@@ -174,16 +165,8 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                 time: self.loc_time.time + 1,
             })
             .filter(|neighbour| {
-                self.grid.is_valid_location(&neighbour.location)
-                    && !self
-                        .grid
-                        .obstacle_map
-                        .get(neighbour.location.0 as usize)
-                        .unwrap()
-                        .get(neighbour.location.1 as usize)
-                        .unwrap()
-                        .binary_search(&neighbour.time)
-                        .is_ok()
+                self.grid
+                    .is_valid_location_time(&neighbour, &self.loc_time.location)
             })
             .map(|neighbour| -> Box<PathFindingNode> {
                 let h = (neighbour.location.0 - self.grid.goal.0).abs()
