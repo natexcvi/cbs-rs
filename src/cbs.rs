@@ -33,6 +33,20 @@ pub struct CBSOptimisationConfig {
     two_direction_subsolver: bool,
 }
 
+impl CBSOptimisationConfig {
+    pub fn new(
+        priotising_conflicts: bool,
+        bypassing_conflicts: bool,
+        two_direction_subsolver: bool,
+    ) -> Self {
+        CBSOptimisationConfig {
+            priotising_conflicts,
+            bypassing_conflicts,
+            two_direction_subsolver,
+        }
+    }
+}
+
 pub struct CBSInstance {
     map: Grid,
     agents: Vec<Agent>,
