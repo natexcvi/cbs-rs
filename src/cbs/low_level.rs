@@ -161,6 +161,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
         self.loc_time
             .time
             .cmp(&other.loc_time.time)
+            .reverse()
             .then(self.loc_time.location.cmp(&other.loc_time.location))
     }
 
