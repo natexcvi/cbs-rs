@@ -86,7 +86,7 @@ where
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let o = (self.node.g() + self.node.h()).total_cmp(&(other.node.g() + other.node.h()));
         match o {
-            std::cmp::Ordering::Equal => self.node.g().total_cmp(&other.node.h()).reverse(),
+            std::cmp::Ordering::Equal => self.node.g().total_cmp(&other.node.g()).reverse(),
             _ => o,
         }
     }

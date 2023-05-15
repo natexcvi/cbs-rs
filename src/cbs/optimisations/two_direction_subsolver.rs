@@ -95,7 +95,7 @@ fn plan_diagonal_kind<'a, 'b>(
             constraint_obstacles.extend(planned_path_obstacles.iter());
             let (path, found) = plan_agent_path(agent, diagonal, &aux_grid, &constraint_obstacles);
             if !found {
-                continue 'diag_loop;
+                continue;
             }
             path.iter().enumerate().for_each(|(i, loc)| {
                 planned_path_obstacles.insert(LocationTime {
