@@ -131,6 +131,11 @@ impl<'a> ConflictTreeNode<'a> {
             ctn.node_preprocessor = preprocessor;
         }
         (ctn.node_preprocessor)(&mut ctn);
+        log::debug!(
+            "Agents left to plan after preprocessing: {}/{}",
+            ctn.paths.len(),
+            ctn.agents.len()
+        );
         ctn.compute_paths();
         ctn.compute_conflicts();
         ctn
