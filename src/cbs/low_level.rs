@@ -157,6 +157,13 @@ impl AStarNode<'_> for PathFindingNode<'_> {
         self.loc_time.location == self.grid.goal
     }
 
+    fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
+        self.loc_time
+            .time
+            .cmp(&other.loc_time.time)
+            .then(self.loc_time.location.cmp(&other.loc_time.location))
+    }
+
     fn expand(&self) -> Option<Vec<Box<Self>>> {
         let expanded = vec![(0, 0), (0, 1), (1, 0), (0, -1), (-1, 0)]
             .iter()

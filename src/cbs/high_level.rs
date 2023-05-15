@@ -273,6 +273,13 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         self.conflicts.is_empty()
     }
 
+    fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
+        self.constraints
+            .len()
+            .cmp(&other.constraints.len())
+            .reverse()
+    }
+
     fn expand(&self) -> Option<Vec<Box<Self>>> {
         let mut expanded = Vec::<Box<Self>>::new();
         if self.conflicts.is_empty() {

@@ -11,6 +11,7 @@ pub trait AStarNode<'a> {
     fn expand(&'a self) -> Option<Vec<Box<Self>>>;
     fn is_goal(&'a self) -> bool;
     fn id(&'a self) -> String;
+    fn tie_breaker(&'a self, other: &'a Self) -> std::cmp::Ordering;
 }
 
 #[derive(Debug)]
@@ -70,6 +71,7 @@ where
                         .partial_cmp(&other.node.g())
                         .expect("if g() + h() is comparable, g() should be comparable")
                         .reverse()
+                        .then(self.node.tie_breaker(&other.node))
                 } else {
                     o
                 }
@@ -86,7 +88,12 @@ where
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let o = (self.node.g() + self.node.h()).total_cmp(&(other.node.g() + other.node.h()));
         match o {
-            std::cmp::Ordering::Equal => self.node.g().total_cmp(&other.node.g()).reverse(),
+            std::cmp::Ordering::Equal => self
+                .node
+                .g()
+                .total_cmp(&other.node.g())
+                .reverse()
+                .then(self.node.tie_breaker(&other.node)),
             _ => o,
         }
     }

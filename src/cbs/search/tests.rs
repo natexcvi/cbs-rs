@@ -31,6 +31,10 @@ impl AStarNode<'_> for TestNode {
         self.h == 0.0
     }
 
+    fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
+        std::cmp::Ordering::Equal
+    }
+
     fn expand(&self) -> Option<Vec<Box<Self>>> {
         Some(self.expand.iter().map(|x| x.clone()).collect())
     }
