@@ -73,21 +73,29 @@ fn main() {
     is_solving.store(false, Ordering::SeqCst);
     match solution {
         Ok(paths) => {
-            if let Some(paths_file) = args.paths_file {
-                fs::write(paths_file, paths_to_string(&paths)).expect("should write paths file");
-            } else {
-                println!("{}", paths_to_string(&paths));
-            }
+            write_paths(&args.paths_file, paths_to_string(&paths));
             if let Some(metrics_file) = args.metrics_file {
-                fs::write(
-                    metrics_file,
-                    format!("#high-level generated\n{}", cbs.high_level_generated),
-                )
-                .expect("should write metrics file");
+                write_metrics(metrics_file, cbs);
             }
         }
         Err(e) => panic!("CBS Error: {:?}", e),
     }
+}
+
+fn write_paths(paths_file: &Option<String>, paths_string: String) {
+    if let Some(paths_file) = paths_file {
+        fs::write(paths_file, paths_string).expect("should write paths file");
+    } else {
+        println!("{}", paths_string);
+    }
+}
+
+fn write_metrics(metrics_file: String, cbs: CBS) {
+    fs::write(
+        metrics_file,
+        format!("#high-level generated\n{}", cbs.high_level_generated),
+    )
+    .expect("should write metrics file");
 }
 
 fn start_timeout_thread(timeout: Duration, is_solving: Arc<AtomicBool>) -> JoinHandle<()> {
