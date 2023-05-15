@@ -209,7 +209,7 @@ fn test_cbs_from_files(
     #[case] exp_path_lengths: Vec<usize>,
 ) {
     let cbs_instance =
-        CBSInstance::from_files(map_file, scenario_file).expect("should be valid scenario files");
+        CBSInstance::from_files(map_file, scenario_file, None).expect("should be valid scenario files");
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     match cbs.solve() {
         Ok(paths) => {

@@ -1,3 +1,4 @@
+use core::num;
 use regex::Regex;
 use std::{
     collections::HashMap,
@@ -85,10 +86,17 @@ impl TryFrom<String> for Agent {
 }
 
 impl CBSInstance {
-    pub fn from_files(map_file: &str, scen_file: &str) -> Result<Self, String> {
+    pub fn from_files(
+        map_file: &str,
+        scen_file: &str,
+        num_agents: Option<usize>,
+    ) -> Result<Self, String> {
         let map_file_content = fs::read_to_string(map_file).map_err(|e| e.to_string())?;
         let map = Grid::try_from(map_file_content)?;
-        let agents = load_scenario_file(scen_file)?;
+        let mut agents = load_scenario_file(scen_file)?;
+        if let Some(num_agents) = num_agents {
+            agents.truncate(num_agents);
+        }
         Ok(CBSInstance { map, agents })
     }
 }

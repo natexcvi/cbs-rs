@@ -40,7 +40,7 @@ struct Args {
         long,
         help = "Consider only the first k agents of the scenario."
     )]
-    num_agents: Option<usize>, // TODO: implement
+    num_agents: Option<usize>,
 
     #[arg(long, default_value = "false")]
     disable_diagonal_subsolver: bool,
@@ -55,7 +55,7 @@ struct Args {
 fn main() {
     env_logger::init();
     let args = Args::parse();
-    let cbs_instance = CBSInstance::from_files(&args.map_file, &args.agents_file)
+    let cbs_instance = CBSInstance::from_files(&args.map_file, &args.agents_file, args.num_agents)
         .expect("should be valid scenario files");
     let optimisation_config = Some(cbs::CBSOptimisationConfig::new(
         !args.disable_prioritising_conflicts,
