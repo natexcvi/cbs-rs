@@ -1,6 +1,8 @@
 mod cbs;
 
 use std::fs;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::{thread::JoinHandle, time::Duration};
 
 use cbs::io::paths_to_string;
@@ -31,7 +33,7 @@ struct Args {
         long,
         help = "Stop if a solution is not found withing this number of seconds."
     )]
-    timeout: Option<u64>, // TODO: implement
+    timeout: Option<u64>,
 
     #[arg(
         short = 'k',
@@ -61,7 +63,15 @@ fn main() {
         !args.disable_diagonal_subsolver,
     ));
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
-    match cbs.solve() {
+    let is_solving = Arc::new(AtomicBool::new(true));
+    if args.timeout.is_some() {
+        let timeout = Duration::from_secs(args.timeout.unwrap());
+        let is_solving = is_solving.clone();
+        start_timeout_thread(timeout, is_solving);
+    }
+    let solution = cbs.solve();
+    is_solving.store(false, Ordering::SeqCst);
+    match solution {
         Ok(paths) => {
             if let Some(paths_file) = args.paths_file {
                 fs::write(paths_file, paths_to_string(&paths)).expect("should write paths file");
@@ -78,4 +88,14 @@ fn main() {
         }
         Err(e) => panic!("CBS Error: {:?}", e),
     }
+}
+
+fn start_timeout_thread(timeout: Duration, is_solving: Arc<AtomicBool>) -> JoinHandle<()> {
+    std::thread::spawn(move || {
+        std::thread::sleep(timeout);
+        if is_solving.load(Ordering::SeqCst) {
+            log::error!("Timed out");
+            std::process::exit(1);
+        }
+    })
 }
