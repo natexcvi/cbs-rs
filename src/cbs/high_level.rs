@@ -138,6 +138,7 @@ impl<'a> ConflictTreeNode<'a> {
         );
         ctn.compute_paths();
         ctn.compute_conflicts();
+        log::debug!("Number of conflicts: {}", ctn.conflicts.len());
         ctn
     }
 
