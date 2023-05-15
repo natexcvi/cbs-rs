@@ -64,8 +64,8 @@ fn main() {
     ));
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     let is_solving = Arc::new(AtomicBool::new(true));
-    if args.timeout.is_some() {
-        let timeout = Duration::from_secs(args.timeout.unwrap());
+    if let Some(timeout) = args.timeout {
+        let timeout = Duration::from_secs(timeout);
         let is_solving = is_solving.clone();
         start_timeout_thread(timeout, is_solving);
     }
