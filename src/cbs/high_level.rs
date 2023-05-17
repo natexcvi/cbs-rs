@@ -1,9 +1,12 @@
+use crate::cbs::io::paths_to_string;
+
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::AStarNode,
 };
 use std::{
     collections::{HashMap, HashSet},
+    fs,
     hash::Hash,
 };
 
@@ -75,6 +78,19 @@ pub struct ConflictTreeNode<'a> {
     low_level_generated: usize,
 }
 
+impl<'a> std::fmt::Debug for ConflictTreeNode<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConflictTreeNode")
+            .field("constraints", &self.constraints)
+            .field("agents", &self.agents)
+            .field("paths", &self.paths)
+            .field("conflicts", &self.conflicts)
+            .field("scenario", &self.scenario)
+            .field("low_level_generated", &self.low_level_generated)
+            .finish()
+    }
+}
+
 impl PartialEq for ConflictTreeNode<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.constraints == other.constraints
@@ -136,9 +152,23 @@ impl<'a> ConflictTreeNode<'a> {
             ctn.agents.len() - ctn.paths.len(),
             ctn.agents.len()
         );
+        log::debug!(
+            "Agents left to plan for: {:?}",
+            ctn.agents
+                .iter()
+                .filter(|a| !ctn.paths.contains_key(*a))
+                .collect::<Vec<_>>()
+        );
         ctn.compute_paths();
+        fs::write(
+            "/Users/nate/Git/MRMP/inter_paths.txt",
+            paths_to_string(&ctn.paths),
+        )
+        .unwrap();
         ctn.compute_conflicts();
         log::debug!("Number of conflicts: {}", ctn.conflicts.len());
+        log::debug!("Number of constraints: {}", ctn.constraints.len());
+        log::debug!("Constraints: {:?}", ctn.constraints);
         ctn
     }
 
@@ -246,7 +276,10 @@ impl<'a> ConflictTreeNode<'a> {
         }
     }
 
-    fn constraints_to_obstacles(&self, agent: &&Agent) -> HashMap<LocationTime, Vec<(i32, i32)>> {
+    pub(crate) fn constraints_to_obstacles(
+        &self,
+        agent: &&Agent,
+    ) -> HashMap<LocationTime, Vec<(i32, i32)>> {
         self.constraints
             .iter()
             .filter(|c| c.agent == *agent)
@@ -301,6 +334,9 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         location: vc.location,
                         prev_location: None,
                     };
+                    if self.constraints.contains(&Box::new(constraint.clone())) {
+                        continue;
+                    }
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));
                     let mut new_paths = self.paths.clone();
@@ -324,6 +360,9 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         location: if i == 0 { ec.location1 } else { ec.location2 },
                         prev_location: Some(if i == 0 { ec.location2 } else { ec.location1 }),
                     };
+                    if self.constraints.contains(&Box::new(constraint.clone())) {
+                        continue;
+                    }
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));
                     let mut new_paths = self.paths.clone();

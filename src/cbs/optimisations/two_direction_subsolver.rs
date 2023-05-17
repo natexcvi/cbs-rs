@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use crate::cbs::high_level::{ConflictTreeNode, Constraint, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
@@ -78,21 +79,15 @@ fn plan_diagonal_kind<'a, 'b>(
         node.scenario.obstacles.clone().into_iter().collect(),
         node.scenario.goal,
     );
-    'diag_loop: for (diagonal, agents) in diagonals.iter() {
+    for (diagonal, agents) in diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
         let mut planned_path_obstacles = HashSet::<LocationTime>::new();
         for agent in agents.iter() {
-            let mut constraint_obstacles = node
-                .constraints
-                .iter()
-                .filter(|constraint| constraint.agent() == *agent)
-                .map(|constraint| LocationTime {
-                    location: constraint.location(),
-                    time: constraint.time(),
-                })
-                .collect::<HashSet<LocationTime>>();
-            constraint_obstacles.extend(planned_path_obstacles.iter());
+            let mut constraint_obstacles = node.constraints_to_obstacles(agent);
+            constraint_obstacles.extend(Grid::to_conditional_obstacles(
+                planned_path_obstacles.clone().into_iter().collect(),
+            ));
             let (path, found) = plan_agent_path(agent, diagonal, &aux_grid, &constraint_obstacles);
             if !found {
                 continue;
@@ -120,7 +115,7 @@ fn plan_agent_path(
     agent: &&Agent,
     diagonal: &Diagonal,
     aux_grid: &Grid,
-    additional_obstacles: &HashSet<LocationTime>,
+    additional_obstacles: &HashMap<LocationTime, Vec<(i32, i32)>>,
 ) -> (Vec<(i32, i32)>, bool) {
     let mut visited = HashSet::<LocationTime>::new();
     let mut path: Path = vec![];
@@ -150,13 +145,24 @@ fn plan_agent_path(
                 .filter(|loc| {
                     aux_grid.is_valid_location_time(&loc, &cur.location)
                         && is_in_start_goal_box(loc, agent)
-                        && !additional_obstacles.contains(loc)
+                        && !is_in_additional_obstacles(loc, cur, additional_obstacles)
                 })
                 .collect()
         },
         &|cur| cur.location == agent.goal,
     );
     (path, found)
+}
+
+fn is_in_additional_obstacles(
+    loc_time: &LocationTime,
+    prev: &LocationTime,
+    additional_obstacles: &HashMap<LocationTime, Vec<(i32, i32)>>,
+) -> bool {
+    match additional_obstacles.get(loc_time) {
+        Some(coming_from) => coming_from.is_empty() || coming_from.contains(&prev.location),
+        None => false,
+    }
 }
 
 fn is_in_start_goal_box(loc_time: &LocationTime, agent: &Agent) -> bool {
