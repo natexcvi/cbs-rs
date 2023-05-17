@@ -33,7 +33,7 @@ impl TryFrom<String> for Grid {
                 if !matches!(c, '.' | 'G' | '@' | 'O' | 'T' | 'S' | 'W') {
                     return Err(format!("Invalid character: {}", c));
                 }
-                if c == &'@' {
+                if matches!(c, '@' | 'O' | 'T' | 'S' | 'W') {
                     obstacles.push(LocationTime {
                         location: (j as i32, i as i32),
                         time: -1,
