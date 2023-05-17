@@ -122,6 +122,12 @@ fn plan_agent_path(
     aux_grid: &Grid,
     additional_obstacles: &HashMap<LocationTime, Vec<(i32, i32)>>,
 ) -> (Vec<(i32, i32)>, bool) {
+    let latest_goal_obstacle_time = additional_obstacles
+        .iter()
+        .filter(|(loc_time, coming_from)| loc_time.location == agent.goal && coming_from.is_empty())
+        .map(|(loc, _)| loc.time)
+        .max()
+        .unwrap_or(i32::MIN); // TODO: think if aux_grid obstacles should be considered here
     let mut visited = HashSet::<LocationTime>::new();
     let mut path: Path = vec![];
     let found = dfs(
@@ -156,6 +162,9 @@ fn plan_agent_path(
         },
         &|cur| cur.location == agent.goal,
     );
+    if path.len() <= latest_goal_obstacle_time as usize {
+        return (path, false);
+    }
     (path, found)
 }
 

@@ -36,6 +36,7 @@ pub struct Grid {
     pub height: i32,
     pub obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
     pub goal: (i32, i32),
+    latest_goal_obstacle_time: i32,
 }
 
 impl Hash for Grid {
@@ -57,12 +58,15 @@ impl Grid {
         obstacles: HashMap<LocationTime, Vec<(i32, i32)>>,
         goal: (i32, i32),
     ) -> Grid {
-        Grid {
+        let mut grid = Grid {
             width,
             height,
             obstacles,
             goal,
-        }
+            latest_goal_obstacle_time: -1,
+        };
+        grid.latest_goal_obstacle_time = grid.latest_goal_obstacle_time();
+        grid
     }
 
     pub fn to_conditional_obstacles(
@@ -108,6 +112,17 @@ impl Grid {
             Some(coming_from) => coming_from.is_empty() || coming_from.contains(&prev_location),
             None => false,
         }
+    }
+
+    pub(crate) fn latest_goal_obstacle_time(&self) -> i32 {
+        self.obstacles
+            .iter()
+            .filter(|(loc_time, coming_from)| {
+                loc_time.location == self.goal && coming_from.is_empty()
+            })
+            .map(|(loc_time, _)| loc_time.time)
+            .max()
+            .unwrap_or(i32::MIN)
     }
 }
 
@@ -155,6 +170,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
 
     fn is_goal(&self) -> bool {
         self.loc_time.location == self.grid.goal
+            && self.loc_time.time > self.grid.latest_goal_obstacle_time
     }
 
     fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
