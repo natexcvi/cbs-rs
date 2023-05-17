@@ -41,7 +41,12 @@ impl Diagonal {
 }
 
 pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
-    let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
+    let diagonals = find_diagonal_sets(
+        node.agents
+            .iter()
+            .filter(|agent| !node.paths.contains_key(*agent)),
+        &node.scenario,
+    );
 
     let diagonal_kinds = vec![
         (DiagonalDirection::Up, DiagonalHalf::Left),

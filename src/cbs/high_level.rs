@@ -360,7 +360,13 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         location: if i == 0 { ec.location1 } else { ec.location2 },
                         prev_location: Some(if i == 0 { ec.location2 } else { ec.location1 }),
                     };
-                    if self.constraints.contains(&Box::new(constraint.clone())) {
+                    let mut vertex_equiv_constraint = constraint.clone();
+                    vertex_equiv_constraint.prev_location = None;
+                    if self
+                        .constraints
+                        .contains(&Box::new(vertex_equiv_constraint))
+                        || self.constraints.contains(&Box::new(constraint.clone()))
+                    {
                         continue;
                     }
                     let mut new_constraints = self.constraints.clone();
