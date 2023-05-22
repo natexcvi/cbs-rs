@@ -162,7 +162,7 @@ fn plan_agent_path(
         },
         &|cur| cur.location == agent.goal,
     );
-    if path.len() <= latest_goal_obstacle_time as usize {
+    if path.len() as i32 <= latest_goal_obstacle_time {
         return (path, false);
     }
     (path, found)
