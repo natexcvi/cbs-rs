@@ -112,6 +112,8 @@ impl Hash for ConflictTreeNode<'_> {
     }
 }
 
+static mut FILE_COUNT: usize = 0;
+
 impl<'a> ConflictTreeNode<'a> {
     pub fn new(
         agents: Vec<&'a Agent>,
@@ -160,15 +162,18 @@ impl<'a> ConflictTreeNode<'a> {
                 .collect::<Vec<_>>()
         );
         ctn.compute_paths();
-        fs::write(
-            "/Users/nate/Git/MRMP/inter_paths.txt",
-            paths_to_string(&ctn.paths),
-        )
-        .unwrap();
+        // unsafe {
+        //     fs::write(
+        //         format!("/Users/nate/Git/MRMP/inter_paths{}.txt", FILE_COUNT),
+        //         paths_to_string(&ctn.paths),
+        //     )
+        //     .unwrap();
+        //     FILE_COUNT += 1;
+        // }
         ctn.compute_conflicts();
         log::debug!("Number of conflicts: {}", ctn.conflicts.len());
         log::debug!("Number of constraints: {}", ctn.constraints.len());
-        log::debug!("Constraints: {:?}", ctn.constraints);
+        // log::debug!("Constraints: {:?}", ctn.constraints);
         ctn
     }
 
@@ -325,6 +330,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             return Some(expanded);
         }
         let conflict = (self.conflict_picker)(self.scenario, &self.paths, &self.conflicts)?;
+        log::debug!("Expanding conflict: {:?}", conflict);
         match *conflict.clone() {
             Conflict::Vertex(vc) => {
                 for agent in vec![vc.agent1, vc.agent2] {
@@ -339,6 +345,14 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                     }
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));
+                    log::debug!("Current constraints: {:?}", self.constraints);
+                    log::debug!("New constraints: {:?}", new_constraints);
+                    // log::debug!(
+                    //     "Path for agent {:?} at time {}: {:?}",
+                    //     agent,
+                    //     vc.time,
+                    //     self.paths[agent][vc.time as usize]
+                    // );
                     let mut new_paths = self.paths.clone();
                     new_paths.remove(agent);
                     expanded.push(Box::new(ConflictTreeNode::new(
@@ -371,6 +385,8 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                     }
                     let mut new_constraints = self.constraints.clone();
                     new_constraints.push(Box::new(constraint));
+                    log::debug!("Current constraints: {:?}", self.constraints);
+                    log::debug!("New constraints: {:?}", new_constraints);
                     let mut new_paths = self.paths.clone();
                     new_paths.remove(agent);
                     expanded.push(Box::new(ConflictTreeNode::new(
