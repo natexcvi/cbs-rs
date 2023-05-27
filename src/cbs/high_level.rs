@@ -2,7 +2,10 @@ use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::AStarNode,
 };
-use std::{collections::HashMap, hash::Hash};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct VertexConflict<'a> {
@@ -69,6 +72,7 @@ pub struct ConflictTreeNode<'a> {
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
     node_preprocessor: fn(&mut Self),
+    use_conflict_avoidance_table: bool,
     low_level_generated: usize,
 }
 
@@ -119,6 +123,7 @@ impl<'a> ConflictTreeNode<'a> {
             fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
         >,
         node_preprocessor: Option<fn(&mut Self)>,
+        use_conflict_avoidance_table: bool,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -130,6 +135,7 @@ impl<'a> ConflictTreeNode<'a> {
             post_expanded_callback: |_, _, expanded| Some(expanded), // TODO: replace with optimization
             node_preprocessor: |_| (),
             low_level_generated: 0,
+            use_conflict_avoidance_table,
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -235,7 +241,35 @@ impl<'a> ConflictTreeNode<'a> {
         self.conflicts = conflicts;
     }
 
+    fn build_conflict_avoidance_table(&self) -> HashSet<LocationTime> {
+        let mut conflict_avoidance_table = HashSet::<LocationTime>::new();
+        for (_, path) in self.paths.iter() {
+            Self::update_conflict_avoidance_table(&mut conflict_avoidance_table, path);
+        }
+        conflict_avoidance_table
+    }
+
+    fn update_conflict_avoidance_table(
+        conflict_avoidance_table: &mut HashSet<LocationTime>,
+        path: &Path,
+    ) {
+        for (i, location) in path.iter().enumerate() {
+            if i == 0 {
+                continue;
+            }
+            conflict_avoidance_table.insert(LocationTime {
+                location: *location,
+                time: i as i32,
+            });
+        }
+    }
+
     fn compute_paths(&mut self) {
+        let mut conflict_avoidance_table = if self.use_conflict_avoidance_table {
+            self.build_conflict_avoidance_table()
+        } else {
+            HashSet::new()
+        };
         for agent in self.agents.iter() {
             if self.paths.contains_key(agent) {
                 continue;
@@ -258,6 +292,7 @@ impl<'a> ConflictTreeNode<'a> {
                     location: agent.start,
                     time: 0,
                 },
+                &conflict_avoidance_table,
             );
             self.paths.insert(
                 agent,
@@ -270,6 +305,12 @@ impl<'a> ConflictTreeNode<'a> {
                 .map(|n| n.location)
                 .collect(),
             );
+            if self.use_conflict_avoidance_table {
+                Self::update_conflict_avoidance_table(
+                    &mut conflict_avoidance_table,
+                    &self.paths[agent],
+                );
+            }
         }
     }
 
@@ -350,6 +391,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
                         Some(self.node_preprocessor),
+                        self.use_conflict_avoidance_table,
                     )));
                 }
             }
@@ -384,6 +426,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
                         Some(self.node_preprocessor),
+                        self.use_conflict_avoidance_table,
                     )));
                 }
             }

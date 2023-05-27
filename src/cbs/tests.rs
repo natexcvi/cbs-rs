@@ -7,6 +7,7 @@ use rstest::rstest;
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: true,
+        conflict_avoidance_table: true,
     }),
     vec![
         Agent {
@@ -32,6 +33,7 @@ use rstest::rstest;
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: true,
+        conflict_avoidance_table: true,
     }),
     vec![
         Agent {
@@ -57,6 +59,7 @@ use rstest::rstest;
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: true,
+        conflict_avoidance_table: true,
     }),
     vec![
         Agent {
@@ -87,6 +90,7 @@ use rstest::rstest;
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: true,
+        conflict_avoidance_table: true,
     }),
     vec![
         Agent {
@@ -117,6 +121,7 @@ use rstest::rstest;
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: true,
+        conflict_avoidance_table: true,
     }),
     vec![
         Agent {
@@ -176,6 +181,7 @@ fn test_cbs(
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: false,
+        conflict_avoidance_table: true,
     }),
     "tests/testdata/maps/empty-16-16.map",
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
@@ -187,6 +193,7 @@ fn test_cbs(
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: false,
+        conflict_avoidance_table: true,
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
@@ -197,6 +204,7 @@ fn test_cbs(
         priotising_conflicts: true,
         bypassing_conflicts: true,
         two_direction_subsolver: false,
+        conflict_avoidance_table: false,
     }),
     "tests/testdata/maps/test_10.map",
     "tests/testdata/scenarios/test_10.scen",

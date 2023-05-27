@@ -54,7 +54,8 @@ fn test_path_finding() {
         time: 0,
     };
     let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
-    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
+    let empty_cat = HashSet::new();
+    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid, &empty_cat);
     let solution = a_star(start_node).expect("No path found");
     assert_eq!(
         solution.path[solution.path.len() - 1].loc_time.location,

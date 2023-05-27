@@ -74,6 +74,7 @@ fn test_bypass_conflict(
         None,
         None,
         None,
+        true,
     );
     let conflict = parent.conflicts[conflict_idx].clone();
     let children: Vec<ConflictTreeNode> = children_paths
@@ -91,6 +92,7 @@ fn test_bypass_conflict(
                 None,
                 None,
                 None,
+                true,
             )
         })
         .collect();

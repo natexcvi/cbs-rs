@@ -31,6 +31,7 @@ pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
     two_direction_subsolver: bool,
+    conflict_avoidance_table: bool,
 }
 
 impl CBSOptimisationConfig {
@@ -38,11 +39,13 @@ impl CBSOptimisationConfig {
         priotising_conflicts: bool,
         bypassing_conflicts: bool,
         two_direction_subsolver: bool,
+        conflict_avoidance_table: bool,
     ) -> Self {
         CBSOptimisationConfig {
             priotising_conflicts,
             bypassing_conflicts,
             two_direction_subsolver,
+            conflict_avoidance_table,
         }
     }
 }
@@ -67,11 +70,8 @@ impl CBS {
             high_level_generated: 0,
             low_level_generated: 0,
             solved: false,
-            optimisation_config: optimisation_config.unwrap_or(CBSOptimisationConfig {
-                priotising_conflicts: false,
-                bypassing_conflicts: false,
-                two_direction_subsolver: false,
-            }),
+            optimisation_config: optimisation_config
+                .unwrap_or(CBSOptimisationConfig::new(false, false, false, false)),
         }
     }
 
@@ -99,6 +99,7 @@ impl CBS {
             } else {
                 None
             },
+            self.optimisation_config.conflict_avoidance_table,
         );
         let solution = a_star(root);
         self.solved = true;

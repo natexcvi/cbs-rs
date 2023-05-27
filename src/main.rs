@@ -50,6 +50,13 @@ struct Args {
 
     #[arg(long, default_value = "false")]
     disable_prioritising_conflicts: bool,
+
+    #[arg(
+        long = "disable-cat",
+        default_value = "false",
+        help = "Disable the conflict avoidance table"
+    )]
+    disable_conflict_avoidance_table: bool,
 }
 
 fn main() {
@@ -61,6 +68,7 @@ fn main() {
         !args.disable_prioritising_conflicts,
         !args.disable_bypassing_conflicts,
         !args.disable_diagonal_subsolver,
+        !args.disable_conflict_avoidance_table,
     ));
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     let is_solving = Arc::new(AtomicBool::new(true));

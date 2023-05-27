@@ -1,6 +1,7 @@
 use std::{
-    collections::{HashMap},
+    collections::{HashMap, HashSet},
     hash::Hash,
+    panic::Location,
 };
 
 use super::search::{a_star, AStarNode};
@@ -132,6 +133,7 @@ struct PathFindingNode<'a> {
     g: f64,
     h: f64,
     grid: &'a Grid,
+    conflict_avoidance_table: &'a HashSet<LocationTime>,
 }
 
 impl PartialEq for PathFindingNode<'_> {
@@ -149,13 +151,26 @@ impl Hash for PathFindingNode<'_> {
 }
 
 impl<'a> PathFindingNode<'a> {
-    fn new(loc_time: LocationTime, g: f64, h: f64, grid: &'a Grid) -> PathFindingNode<'a> {
+    fn new(
+        loc_time: LocationTime,
+        g: f64,
+        h: f64,
+        grid: &'a Grid,
+        conflict_avoidance_table: &'a HashSet<LocationTime>,
+    ) -> PathFindingNode<'a> {
         PathFindingNode {
             loc_time,
             g,
             h,
             grid,
+            conflict_avoidance_table,
         }
+    }
+}
+
+impl PathFindingNode<'_> {
+    fn is_in_conflict(&self) -> bool {
+        self.conflict_avoidance_table.contains(&self.loc_time)
     }
 }
 
@@ -174,9 +189,9 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     }
 
     fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
-        self.loc_time
-            .time
-            .cmp(&other.loc_time.time)
+        self.is_in_conflict()
+            .cmp(&other.is_in_conflict())
+            .then_with(|| self.loc_time.time.cmp(&other.loc_time.time))
             .reverse()
             .then_with(|| self.loc_time.location.cmp(&other.loc_time.location))
     }
@@ -200,6 +215,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                     self.g + 1.0,
                     h as f64,
                     self.grid,
+                    self.conflict_avoidance_table,
                 ))
             })
             .collect::<Vec<Box<Self>>>();
@@ -211,9 +227,13 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     }
 }
 
-pub fn find_shortest_path(grid: Grid, start: LocationTime) -> Option<(Vec<LocationTime>, usize)> {
+pub fn find_shortest_path(
+    grid: Grid,
+    start: LocationTime,
+    conflict_avoidance_table: &HashSet<LocationTime>,
+) -> Option<(Vec<LocationTime>, usize)> {
     let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
-    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid);
+    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid, &conflict_avoidance_table);
     let solution = a_star(start_node).expect("should find path");
     Some((
         solution.path.iter().map(|node| node.loc_time).collect(),
