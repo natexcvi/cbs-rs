@@ -1,7 +1,7 @@
 # CBS-rs
 A Rust implementation of the Improved Conflict-Based Search algorithm for multi-agent pathfinding.
 
-## Installation (from source)
+## Installation
 1. Install Rust from [here](https://www.rust-lang.org/tools/install).
 2. Run `cargo install --git https://github.com/natexcvi/cbs-rs` to install the `cbs-rs` binary.
 
