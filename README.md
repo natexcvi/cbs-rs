@@ -3,9 +3,7 @@ A Rust implementation of the Improved Conflict-Based Search algorithm for multi-
 
 ## Installation (from source)
 1. Install Rust from [here](https://www.rust-lang.org/tools/install).
-2. Clone this repository.
-3. Run `cargo build --release` in the root directory of the repository.
-4. The binary will be located in `target/release/cbs-rs`.
+2. Run `cargo install --git https://github.com/natexcvi/cbs-rs` to install the `cbs-rs` binary.
 
 ## Usage
 Run `cbs-rs --help` for usage information.
