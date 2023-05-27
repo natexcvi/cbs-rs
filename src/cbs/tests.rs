@@ -181,7 +181,7 @@ fn test_cbs(
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
     vec![6, 20, 7, 23, 15]
 )]
-#[ignore = "investigate bad performance"]
+#[ignore = "bad low level performance"]
 #[case::maze_128x128(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
@@ -208,8 +208,8 @@ fn test_cbs_from_files(
     #[case] scenario_file: &str,
     #[case] exp_path_lengths: Vec<usize>,
 ) {
-    let cbs_instance =
-        CBSInstance::from_files(map_file, scenario_file, None).expect("should be valid scenario files");
+    let cbs_instance = CBSInstance::from_files(map_file, scenario_file, None)
+        .expect("should be valid scenario files");
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     match cbs.solve() {
         Ok(paths) => {
