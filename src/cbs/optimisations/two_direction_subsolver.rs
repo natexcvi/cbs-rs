@@ -33,8 +33,8 @@ impl Diagonal {
                 DiagonalHalf::Right => vec![(1, 0), (0, 1)],
             },
             DiagonalDirection::Down => match self.half {
-                DiagonalHalf::Left => vec![(-1, 0), (0, 1)],
-                DiagonalHalf::Right => vec![(1, 0), (0, -1)],
+                DiagonalHalf::Left => vec![(0, 1), (-1, 0)],
+                DiagonalHalf::Right => vec![(0, -1), (1, 0)],
             },
         }
     }
