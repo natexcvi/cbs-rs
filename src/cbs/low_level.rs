@@ -178,7 +178,7 @@ impl AStarNode<'_> for PathFindingNode<'_> {
             .time
             .cmp(&other.loc_time.time)
             .reverse()
-            .then(self.loc_time.location.cmp(&other.loc_time.location))
+            .then_with(|| self.loc_time.location.cmp(&other.loc_time.location))
     }
 
     fn expand(&self) -> Option<Vec<Box<Self>>> {

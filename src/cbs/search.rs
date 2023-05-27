@@ -71,7 +71,7 @@ where
                         .partial_cmp(&other.node.g())
                         .expect("if g() + h() is comparable, g() should be comparable")
                         .reverse()
-                        .then(self.node.tie_breaker(&other.node))
+                        .then_with(|| self.node.tie_breaker(&other.node))
                 } else {
                     o
                 }
@@ -93,7 +93,7 @@ where
                 .g()
                 .total_cmp(&other.node.g())
                 .reverse()
-                .then(self.node.tie_breaker(&other.node)),
+                .then_with(|| self.node.tie_breaker(&other.node)),
             _ => o,
         }
     }

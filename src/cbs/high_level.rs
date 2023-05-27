@@ -322,6 +322,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             .len()
             .cmp(&other.constraints.len())
             .reverse()
+            .then_with(|| self.conflicts.len().cmp(&other.conflicts.len()))
     }
 
     fn expand(&self) -> Option<Vec<Box<Self>>> {
