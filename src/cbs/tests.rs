@@ -176,7 +176,7 @@ fn test_cbs(
 }
 
 #[rstest]
-#[case::simple(
+#[case::empty_16x16(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
