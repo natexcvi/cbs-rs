@@ -1,4 +1,3 @@
-use core::num;
 use regex::Regex;
 use std::{
     collections::HashMap,
@@ -75,14 +74,6 @@ impl TryInto<String> for Grid {
     }
 
     type Error = String;
-}
-
-impl TryFrom<String> for Agent {
-    type Error = String;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        todo!()
-    }
 }
 
 impl CBSInstance {

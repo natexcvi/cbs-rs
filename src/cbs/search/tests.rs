@@ -31,7 +31,7 @@ impl AStarNode<'_> for TestNode {
         self.h == 0.0
     }
 
-    fn tie_breaker(&self, other: &Self) -> std::cmp::Ordering {
+    fn tie_breaker(&self, _: &Self) -> std::cmp::Ordering {
         std::cmp::Ordering::Equal
     }
 
@@ -90,7 +90,7 @@ fn test_a_star() {
 #[rstest]
 #[case(
     vec![].into_iter().collect::<HashSet<String>>(),
-    &|path: &mut Vec<String>, cur: &String, parent: &Option<String>| {
+    &|path: &mut Vec<String>, cur: &String, _: &Option<String>| {
         path.push(cur.clone());
         true
     },
@@ -114,7 +114,7 @@ fn test_a_star() {
 )]
 #[case(
     vec![].into_iter().collect::<HashSet<String>>(),
-    &|path: &mut Vec<String>, cur: &String, parent: &Option<String>| {
+    &|path: &mut Vec<String>, cur: &String, _: &Option<String>| {
         path.push(cur.clone());
         true
     },

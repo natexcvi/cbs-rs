@@ -134,10 +134,7 @@ where
     let mut best_g = HashMap::<Rc<T>, f64>::new();
     let start = Rc::new(start);
     let start_g = start.g();
-    frontier.push(Reverse(HeapNode {
-        node: Rc::clone(&start),
-        prev: None,
-    }));
+    frontier.push(Reverse(HeapNode::new(Rc::clone(&start))));
     best_g.insert(start, start_g);
     loop {
         if frontier.is_empty() {

@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use crate::cbs::high_level::{ConflictTreeNode, Constraint, Path};
+use crate::cbs::high_level::{ConflictTreeNode, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
 use crate::cbs::search::dfs;
 use crate::cbs::Agent;
@@ -26,6 +26,7 @@ struct Diagonal {
 }
 
 impl Diagonal {
+    /// Returns the direction vecs of this [`Diagonal`].
     fn direction_vecs(&self) -> Vec<(i32, i32)> {
         match self.direction {
             DiagonalDirection::Up => match self.half {
@@ -40,6 +41,9 @@ impl Diagonal {
     }
 }
 
+/// Plans the paths of the agents in the given [`ConflictTreeNode`] using the two-direction
+/// subsolver.
+/// Agents with no individually optimal paths are left unplanned for.
 pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
 

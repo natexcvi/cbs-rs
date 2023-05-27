@@ -1,11 +1,9 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::hash::Hash;
-use std::rc::Rc;
+use std::collections::{HashMap, VecDeque};
 
 use crate::cbs::high_level::Path;
 use crate::cbs::{
     high_level::{Agent, Conflict},
-    low_level::{Grid, LocationTime},
+    low_level::Grid,
 };
 
 struct MDDNode<T> {

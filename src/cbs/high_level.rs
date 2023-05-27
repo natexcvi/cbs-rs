@@ -1,14 +1,8 @@
-use crate::cbs::io::paths_to_string;
-
 use super::{
     low_level::{find_shortest_path, Grid, LocationTime},
     search::AStarNode,
 };
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-    hash::Hash,
-};
+use std::{collections::HashMap, hash::Hash};
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct VertexConflict<'a> {
@@ -111,8 +105,6 @@ impl Hash for ConflictTreeNode<'_> {
         self.scenario.hash(state);
     }
 }
-
-static mut FILE_COUNT: usize = 0;
 
 impl<'a> ConflictTreeNode<'a> {
     pub fn new(
@@ -348,12 +340,6 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                     new_constraints.push(Box::new(constraint));
                     log::debug!("Current constraints: {:?}", self.constraints);
                     log::debug!("New constraints: {:?}", new_constraints);
-                    // log::debug!(
-                    //     "Path for agent {:?} at time {}: {:?}",
-                    //     agent,
-                    //     vc.time,
-                    //     self.paths[agent][vc.time as usize]
-                    // );
                     let mut new_paths = self.paths.clone();
                     new_paths.remove(agent);
                     expanded.push(Box::new(ConflictTreeNode::new(
