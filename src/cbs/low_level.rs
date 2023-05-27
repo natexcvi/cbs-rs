@@ -4,6 +4,8 @@ use std::{
     panic::Location,
 };
 
+use heuristic::Heuristic;
+
 use super::search::{a_star, AStarNode};
 
 #[derive(Debug, Eq, Clone, Copy)]
@@ -127,13 +129,26 @@ impl Grid {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 struct PathFindingNode<'a> {
     loc_time: LocationTime,
     g: f64,
     h: f64,
     grid: &'a Grid,
     conflict_avoidance_table: &'a HashSet<LocationTime>,
+    heuristic: &'a dyn heuristic::Heuristic<LocationTime>,
+}
+
+impl<'a> std::fmt::Debug for PathFindingNode<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PathFindingNode")
+            .field("loc_time", &self.loc_time)
+            .field("g", &self.g)
+            .field("h", &self.h)
+            .field("grid", &self.grid)
+            .field("conflict_avoidance_table", &self.conflict_avoidance_table)
+            .finish()
+    }
 }
 
 impl PartialEq for PathFindingNode<'_> {
@@ -157,6 +172,7 @@ impl<'a> PathFindingNode<'a> {
         h: f64,
         grid: &'a Grid,
         conflict_avoidance_table: &'a HashSet<LocationTime>,
+        heuristic: &'a dyn heuristic::Heuristic<LocationTime>,
     ) -> PathFindingNode<'a> {
         PathFindingNode {
             loc_time,
@@ -164,6 +180,7 @@ impl<'a> PathFindingNode<'a> {
             h,
             grid,
             conflict_avoidance_table,
+            heuristic,
         }
     }
 }
@@ -208,14 +225,14 @@ impl AStarNode<'_> for PathFindingNode<'_> {
                     .is_valid_location_time(&neighbour, &self.loc_time.location)
             })
             .map(|neighbour| -> Box<PathFindingNode> {
-                let h = (neighbour.location.0 - self.grid.goal.0).abs()
-                    + (neighbour.location.1 - self.grid.goal.1).abs();
+                let h = self.heuristic.h(&neighbour);
                 Box::new(PathFindingNode::new(
                     neighbour,
                     self.g + 1.0,
                     h as f64,
                     self.grid,
                     self.conflict_avoidance_table,
+                    self.heuristic,
                 ))
             })
             .collect::<Vec<Box<Self>>>();
@@ -232,13 +249,23 @@ pub fn find_shortest_path(
     start: LocationTime,
     conflict_avoidance_table: &HashSet<LocationTime>,
 ) -> Option<(Vec<LocationTime>, usize)> {
-    let h = (start.location.0 - grid.goal.0).abs() + (start.location.1 - grid.goal.1).abs();
-    let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid, &conflict_avoidance_table);
+    let heuristic = heuristic::ManhattanDistance::new(&grid);
+    let h = heuristic.h(&start);
+    let start_node = PathFindingNode::new(
+        start,
+        0.0,
+        h as f64,
+        &grid,
+        &conflict_avoidance_table,
+        &heuristic,
+    );
     let solution = a_star(start_node).expect("should find path");
     Some((
         solution.path.iter().map(|node| node.loc_time).collect(),
         solution.nodes_generated as usize,
     ))
 }
+
+mod heuristic;
 
 mod tests;
