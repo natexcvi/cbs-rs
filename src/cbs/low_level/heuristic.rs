@@ -71,7 +71,7 @@ impl AStarNode<'_> for TrueDistanceNode {
     }
 
     fn is_goal(&self) -> bool {
-        self.location == self.grid.goal
+        false
     }
 
     fn id(&self) -> String {
