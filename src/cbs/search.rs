@@ -31,7 +31,7 @@ impl std::fmt::Display for SearchError {
 
 impl Error for SearchError {}
 
-struct HeapNode<T>
+pub(crate) struct HeapNode<T>
 where
     for<'a> T: AStarNode<'a> + Clone,
 {
@@ -43,7 +43,7 @@ impl<T> HeapNode<T>
 where
     for<'a> T: AStarNode<'a> + Clone,
 {
-    fn new(node: Rc<T>) -> HeapNode<T> {
+    pub(crate) fn new(node: Rc<T>) -> HeapNode<T> {
         HeapNode { node, prev: None }
     }
 }
@@ -128,14 +128,26 @@ pub fn a_star<T>(start: T) -> Result<AStarSolution<T>, SearchError>
 where
     for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
 {
-    let t0 = std::time::Instant::now();
     let mut frontier = BinaryHeap::<Reverse<HeapNode<T>>>::new();
-    let mut nodes_generated = 0;
     let mut best_g = HashMap::<Rc<T>, f64>::new();
     let start = Rc::new(start);
     let start_g = start.g();
     frontier.push(Reverse(HeapNode::new(Rc::clone(&start))));
     best_g.insert(start, start_g);
+    return stateful_a_star(&mut frontier, &mut best_g, f64::INFINITY);
+}
+
+pub(crate) fn stateful_a_star<T>(
+    frontier: &mut BinaryHeap<Reverse<HeapNode<T>>>,
+    best_g: &mut HashMap<Rc<T>, f64>,
+    max_g: f64,
+) -> Result<AStarSolution<T>, SearchError>
+where
+    for<'a> T: AStarNode<'a> + Clone + std::hash::Hash + Eq,
+{
+    let t0 = std::time::Instant::now();
+    let mut nodes_generated = 0;
+
     loop {
         if frontier.is_empty() {
             return Err(SearchError::NotFound);
@@ -152,6 +164,16 @@ where
                 path: reconstruct_path(Rc::clone(&current)),
                 nodes_generated,
             });
+        }
+        if current.node.g() > max_g {
+            frontier.push(Reverse(HeapNode {
+                node: Rc::clone(&current.node),
+                prev: match &current.prev {
+                    Some(prev) => Some(Rc::clone(prev)),
+                    None => None,
+                },
+            }));
+            return Err(SearchError::NotFound);
         }
         if current.node.g() > *best_g.get(&current.node).unwrap_or(&f64::INFINITY) {
             continue;

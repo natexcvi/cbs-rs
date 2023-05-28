@@ -187,7 +187,6 @@ fn test_cbs(
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
     vec![6, 20, 7, 23, 15]
 )]
-#[ignore = "bad low level performance"]
 #[case::maze_128x128(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,

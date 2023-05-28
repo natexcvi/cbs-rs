@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
-    panic::Location,
+    rc::Rc,
 };
 
 use heuristic::Heuristic;
@@ -249,7 +249,7 @@ pub fn find_shortest_path(
     start: LocationTime,
     conflict_avoidance_table: &HashSet<LocationTime>,
 ) -> Option<(Vec<LocationTime>, usize)> {
-    let heuristic = heuristic::ManhattanDistance::new(&grid);
+    let heuristic = heuristic::TrueDistance::new(Rc::new(grid.clone()), start.location.clone());
     let h = heuristic.h(&start);
     let start_node = PathFindingNode::new(
         start,

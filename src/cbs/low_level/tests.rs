@@ -53,7 +53,7 @@ fn test_path_finding() {
         location: (0, 0),
         time: 0,
     };
-    let heuristic = heuristic::ManhattanDistance::new(&grid);
+    let heuristic = heuristic::ManhattanDistance::new(Rc::new(grid.clone()));
     let h = heuristic.h(&start);
     let empty_cat = HashSet::new();
     let start_node = PathFindingNode::new(start, 0.0, h as f64, &grid, &empty_cat, &heuristic);
