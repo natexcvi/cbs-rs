@@ -145,6 +145,7 @@ impl TrueDistance {
 
 impl Heuristic<LocationTime> for TrueDistance {
     fn h(&self, loc_time: &LocationTime) -> f64 {
+        let mut increase_by = 3.0;
         loop {
             let best_g = self.best_g.borrow();
             let h_value = best_g.get(&Rc::new(TrueDistanceNode {
@@ -158,7 +159,8 @@ impl Heuristic<LocationTime> for TrueDistance {
                 None => {
                     drop(best_g);
                     let cur_max = self.max_g.borrow().clone();
-                    self.max_g.replace(cur_max + 3.0);
+                    self.max_g.replace(cur_max + increase_by);
+                    increase_by *= 2.0;
                     self.extend_h_values(self.max_g.borrow().clone());
                 }
             }
