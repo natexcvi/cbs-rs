@@ -27,8 +27,6 @@ struct TrueDistanceNode {
 impl std::hash::Hash for TrueDistanceNode {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.location.hash(state);
-        // self.time.hash(state);
-        // self.grid.hash(state);
     }
 }
 
@@ -36,7 +34,7 @@ impl Eq for TrueDistanceNode {}
 
 impl PartialEq for TrueDistanceNode {
     fn eq(&self, other: &Self) -> bool {
-        self.location == other.location //&& self.time == other.time && self.grid == other.grid
+        self.location == other.location
     }
 }
 
@@ -128,11 +126,11 @@ impl TrueDistance {
         td
     }
 
-    fn extend_h_values(&self, up_to: f64) {
+    fn compute_h_values(&self, max_dist_from_goal: f64) {
         let result = stateful_a_star(
             &mut self.frontier.borrow_mut(),
             &mut self.best_g.borrow_mut(),
-            up_to,
+            max_dist_from_goal,
         );
         match result {
             Ok(_) => {}
@@ -144,7 +142,7 @@ impl TrueDistance {
 
 impl Heuristic<LocationTime> for TrueDistance {
     fn h(&self, loc_time: &LocationTime) -> f64 {
-        let mut increase_by = 3.0;
+        let mut max_dist_increase_factor = 3.0;
         loop {
             let best_g = self.best_g.borrow();
             let h_value = best_g.get(&Rc::new(TrueDistanceNode {
@@ -158,9 +156,9 @@ impl Heuristic<LocationTime> for TrueDistance {
                 None => {
                     drop(best_g);
                     let cur_max = self.max_g.borrow().clone();
-                    self.max_g.replace(cur_max + increase_by);
-                    increase_by *= 2.0;
-                    self.extend_h_values(self.max_g.borrow().clone());
+                    self.max_g.replace(cur_max + max_dist_increase_factor);
+                    max_dist_increase_factor *= 2.0;
+                    self.compute_h_values(self.max_g.borrow().clone());
                 }
             }
         }
