@@ -93,19 +93,19 @@ pub(crate) struct TrueDistance {
 
 impl TrueDistance {
     pub(crate) fn new(grid: Rc<Grid>, start: Location) -> TrueDistance {
-        let td = TrueDistance {
-            grid: Rc::clone(&grid),
-            frontier: RefCell::new(BinaryHeap::new()),
-            best_g: RefCell::new(HashMap::new()),
-            heuristic: Rc::new(ManhattanDistance::new(Rc::clone(&grid))),
-            max_g: RefCell::new(0.0),
-        };
         let aux_grid = Rc::new(Grid::new(
             grid.width,
             grid.height,
             grid.obstacles.clone(),
             start,
         ));
+        let td = TrueDistance {
+            grid: Rc::clone(&grid),
+            frontier: RefCell::new(BinaryHeap::new()),
+            best_g: RefCell::new(HashMap::new()),
+            heuristic: Rc::new(ManhattanDistance::new(Rc::clone(&aux_grid))),
+            max_g: RefCell::new(3.0),
+        };
         td.frontier
             .borrow_mut()
             .push(Reverse(HeapNode::new(Rc::new(TrueDistanceNode {
@@ -157,7 +157,7 @@ impl Heuristic<LocationTime> for TrueDistance {
                     drop(best_g);
                     let cur_max = self.max_g.borrow().clone();
                     self.max_g.replace(cur_max + max_dist_increase_factor);
-                    max_dist_increase_factor *= 2.0;
+                    // max_dist_increase_factor *= 2.0;
                     self.compute_h_values(self.max_g.borrow().clone());
                 }
             }
