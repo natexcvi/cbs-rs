@@ -210,6 +210,8 @@ impl DynamicGoalManhattanDistance {
         }
     }
 
+    /// Note: any data structures that depend on
+    /// ordering by the heuristic value must be rebuilt.
     fn set_goal(&self, goal: Location) {
         self.goal.replace(goal);
     }
