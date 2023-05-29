@@ -250,7 +250,9 @@ pub fn find_shortest_path(
     conflict_avoidance_table: &HashSet<LocationTime>,
 ) -> Option<(Vec<LocationTime>, usize)> {
     let heuristic = heuristic::TrueDistance::new(Rc::new(grid.clone()), start.location.clone());
+    let t0 = std::time::Instant::now();
     let h = heuristic.h(&start);
+    log::debug!("Calculating heuristic took {:?}", t0.elapsed());
     let start_node = PathFindingNode::new(
         start,
         0.0,

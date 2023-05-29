@@ -68,7 +68,7 @@ impl AStarNode<'_> for TrueDistanceNode {
     }
 
     fn is_goal(&self) -> bool {
-        false
+        self.h() == 0.0
     }
 
     fn id(&self) -> String {
@@ -88,7 +88,6 @@ pub(crate) struct TrueDistance {
     best_g: RefCell<HashMap<Rc<TrueDistanceNode>, f64>>,
     frontier: RefCell<BinaryHeap<Reverse<HeapNode<TrueDistanceNode>>>>,
     heuristic: Rc<DynamicGoalManhattanDistance>,
-    max_g: RefCell<f64>,
 }
 
 impl TrueDistance {
@@ -104,7 +103,6 @@ impl TrueDistance {
             frontier: RefCell::new(BinaryHeap::new()),
             best_g: RefCell::new(HashMap::new()),
             heuristic: Rc::new(DynamicGoalManhattanDistance::new(grid.goal)),
-            max_g: RefCell::new(3.0),
         };
         td.frontier
             .borrow_mut()
@@ -126,7 +124,7 @@ impl TrueDistance {
         td
     }
 
-    fn compute_h_values(&self, location: Location, max_dist_from_goal: f64) {
+    fn compute_h_values(&self, location: Location) {
         self.heuristic.set_goal(location);
         // frontier needs to be re-built because the ranking
         // function depends on h
@@ -134,7 +132,7 @@ impl TrueDistance {
         let result = stateful_a_star(
             &mut self.frontier.borrow_mut(),
             &mut self.best_g.borrow_mut(),
-            max_dist_from_goal,
+            f64::INFINITY,
         );
         match result {
             Ok(_) => {}
@@ -158,23 +156,20 @@ impl Heuristic<LocationTime> for TrueDistance {
     /// If the true distance is not known, it is computed on the fly.
     /// `loc_time` must be reachable from the goal.
     fn h(&self, loc_time: &LocationTime) -> f64 {
-        let max_dist_increase_factor = 3.0;
-        loop {
-            let best_g = self.best_g.borrow();
-            let h_value = best_g.get(&Rc::new(TrueDistanceNode {
-                location: loc_time.location,
-                time: loc_time.time,
-                grid: Rc::clone(&self.grid),
-                heuristic: Rc::clone(&self.heuristic),
-            }));
-            match h_value {
-                Some(h) => return *h,
-                None => {
-                    drop(best_g);
-                    let cur_max = self.max_g.borrow().clone();
-                    self.max_g.replace(cur_max + max_dist_increase_factor);
-                    self.compute_h_values(loc_time.location, self.max_g.borrow().clone());
-                }
+        let best_g = self.best_g.borrow();
+        let query_node = Rc::new(TrueDistanceNode {
+            location: loc_time.location,
+            time: loc_time.time,
+            grid: Rc::clone(&self.grid),
+            heuristic: Rc::clone(&self.heuristic),
+        });
+        let h_value = best_g.get(&query_node);
+        match h_value {
+            Some(h) => *h,
+            None => {
+                drop(best_g);
+                self.compute_h_values(loc_time.location);
+                *self.best_g.borrow().get(&query_node).unwrap()
             }
         }
     }
