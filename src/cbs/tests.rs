@@ -209,6 +209,17 @@ fn test_cbs(
     "tests/testdata/scenarios/test_10.scen",
     vec![12, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
 )] // TODO: confirm this case
+#[case::diagonal_11_transposed(
+    Some(CBSOptimisationConfig {
+        priotising_conflicts: true,
+        bypassing_conflicts: true,
+        two_direction_subsolver: true,
+        conflict_avoidance_table: true,
+    }),
+    "tests/testdata/maps/up_right_11_transposed.map",
+    "tests/testdata/scenarios/up_right_11_transposed.scen",
+    vec![25, 13, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28]
+)]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
     #[case] map_file: &str,
