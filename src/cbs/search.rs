@@ -31,6 +31,7 @@ impl std::fmt::Display for SearchError {
 
 impl Error for SearchError {}
 
+#[derive(Clone, Debug)]
 pub(crate) struct HeapNode<T>
 where
     for<'a> T: AStarNode<'a> + Clone,

@@ -21,7 +21,7 @@ struct TrueDistanceNode {
     location: Location,
     time: i32,
     grid: Rc<Grid>,
-    heuristic: Rc<ManhattanDistance>,
+    heuristic: Rc<DynamicGoalManhattanDistance>,
 }
 
 impl std::hash::Hash for TrueDistanceNode {
@@ -87,7 +87,7 @@ pub(crate) struct TrueDistance {
     grid: Rc<Grid>,
     best_g: RefCell<HashMap<Rc<TrueDistanceNode>, f64>>,
     frontier: RefCell<BinaryHeap<Reverse<HeapNode<TrueDistanceNode>>>>,
-    heuristic: Rc<ManhattanDistance>,
+    heuristic: Rc<DynamicGoalManhattanDistance>,
     max_g: RefCell<f64>,
 }
 
@@ -103,7 +103,7 @@ impl TrueDistance {
             grid: Rc::clone(&grid),
             frontier: RefCell::new(BinaryHeap::new()),
             best_g: RefCell::new(HashMap::new()),
-            heuristic: Rc::new(ManhattanDistance::new(Rc::clone(&aux_grid))),
+            heuristic: Rc::new(DynamicGoalManhattanDistance::new(grid.goal)),
             max_g: RefCell::new(3.0),
         };
         td.frontier
@@ -126,7 +126,11 @@ impl TrueDistance {
         td
     }
 
-    fn compute_h_values(&self, max_dist_from_goal: f64) {
+    fn compute_h_values(&self, location: Location, max_dist_from_goal: f64) {
+        self.heuristic.set_goal(location);
+        // frontier needs to be re-built because the ranking
+        // function depends on h
+        self.rebuild_frontier();
         let result = stateful_a_star(
             &mut self.frontier.borrow_mut(),
             &mut self.best_g.borrow_mut(),
@@ -138,11 +142,20 @@ impl TrueDistance {
             Err(e) => panic!("Unexpected error: {}", e),
         }
     }
+
+    fn rebuild_frontier(&self) {
+        let mut new = BinaryHeap::new();
+        self.frontier
+            .borrow_mut()
+            .iter()
+            .for_each(|node| new.push((*node).clone()));
+        self.frontier.replace(new);
+    }
 }
 
 impl Heuristic<LocationTime> for TrueDistance {
     fn h(&self, loc_time: &LocationTime) -> f64 {
-        let mut max_dist_increase_factor = 3.0;
+        let max_dist_increase_factor = 3.0;
         loop {
             let best_g = self.best_g.borrow();
             let h_value = best_g.get(&Rc::new(TrueDistanceNode {
@@ -157,8 +170,7 @@ impl Heuristic<LocationTime> for TrueDistance {
                     drop(best_g);
                     let cur_max = self.max_g.borrow().clone();
                     self.max_g.replace(cur_max + max_dist_increase_factor);
-                    // max_dist_increase_factor *= 2.0;
-                    self.compute_h_values(self.max_g.borrow().clone());
+                    self.compute_h_values(loc_time.location, self.max_g.borrow().clone());
                 }
             }
         }
@@ -180,6 +192,30 @@ impl Heuristic<LocationTime> for ManhattanDistance {
     fn h(&self, loc_time: &LocationTime) -> f64 {
         (loc_time.location.0 - self.grid.goal.0).abs() as f64
             + (loc_time.location.1 - self.grid.goal.1).abs() as f64
+    }
+}
+
+#[derive(Debug)]
+struct DynamicGoalManhattanDistance {
+    goal: RefCell<Location>,
+}
+
+impl DynamicGoalManhattanDistance {
+    fn new(goal: Location) -> DynamicGoalManhattanDistance {
+        DynamicGoalManhattanDistance {
+            goal: RefCell::new(goal),
+        }
+    }
+
+    fn set_goal(&self, goal: Location) {
+        self.goal.replace(goal);
+    }
+}
+
+impl Heuristic<LocationTime> for DynamicGoalManhattanDistance {
+    fn h(&self, loc_time: &LocationTime) -> f64 {
+        (loc_time.location.0 - self.goal.borrow().0).abs() as f64
+            + (loc_time.location.1 - self.goal.borrow().1).abs() as f64
     }
 }
 
