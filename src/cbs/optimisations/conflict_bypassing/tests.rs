@@ -1,7 +1,7 @@
 use super::bypass_conflict;
 use crate::cbs::{
     high_level::{Agent, ConflictTreeNode, Path},
-    low_level::Grid,
+    low_level::{AStarLowLevelSolver, Grid},
 };
 use rstest::rstest;
 
@@ -61,6 +61,7 @@ fn test_bypass_conflict(
             goal: path[path.len() - 1],
         });
     }
+    let low_level_solver = AStarLowLevelSolver::new();
     let scenario = Grid::new(10, 5, Grid::to_conditional_obstacles(vec![]), (0, 0));
     let parent = ConflictTreeNode::new(
         agents.iter().collect(),
@@ -75,6 +76,7 @@ fn test_bypass_conflict(
         None,
         None,
         true,
+        &low_level_solver,
     );
     let conflict = parent.conflicts[conflict_idx].clone();
     let children: Vec<ConflictTreeNode> = children_paths
@@ -93,6 +95,7 @@ fn test_bypass_conflict(
                 None,
                 None,
                 true,
+                &low_level_solver,
             )
         })
         .collect();

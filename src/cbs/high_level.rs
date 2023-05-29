@@ -1,5 +1,5 @@
 use super::{
-    low_level::{find_shortest_path, Grid, LocationTime},
+    low_level::{AStarLowLevelSolver, Grid, LocationTime, LowLevelSolver},
     search::AStarNode,
 };
 use std::{
@@ -74,6 +74,7 @@ pub struct ConflictTreeNode<'a> {
     node_preprocessor: fn(&mut Self),
     use_conflict_avoidance_table: bool,
     low_level_generated: usize,
+    low_level_solver: &'a AStarLowLevelSolver,
 }
 
 impl<'a> std::fmt::Debug for ConflictTreeNode<'a> {
@@ -124,6 +125,7 @@ impl<'a> ConflictTreeNode<'a> {
         >,
         node_preprocessor: Option<fn(&mut Self)>,
         use_conflict_avoidance_table: bool,
+        low_level_solver: &'a AStarLowLevelSolver,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -136,6 +138,7 @@ impl<'a> ConflictTreeNode<'a> {
             node_preprocessor: |_| (),
             low_level_generated: 0,
             use_conflict_avoidance_table,
+            low_level_solver,
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -276,7 +279,8 @@ impl<'a> ConflictTreeNode<'a> {
                     .or_insert(vec![])
                     .extend(prevs.clone());
             });
-            let path = find_shortest_path(
+            let path = self.low_level_solver.find_shortest_path(
+                agent.id.clone(),
                 Grid::new(
                     self.scenario.width,
                     self.scenario.height,
@@ -387,6 +391,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(self.post_expanded_callback),
                         Some(self.node_preprocessor),
                         self.use_conflict_avoidance_table,
+                        self.low_level_solver,
                     )));
                 }
             }
@@ -422,6 +427,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(self.post_expanded_callback),
                         Some(self.node_preprocessor),
                         self.use_conflict_avoidance_table,
+                        self.low_level_solver,
                     )));
                 }
             }

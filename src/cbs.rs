@@ -2,7 +2,7 @@ use std::{collections::HashMap, error::Error, fmt};
 
 use self::{
     high_level::{Agent, ConflictTreeNode, Constraint, Path},
-    low_level::Grid,
+    low_level::{AStarLowLevelSolver, Grid},
     search::a_star,
 };
 
@@ -79,6 +79,7 @@ impl CBS {
         if self.solved {
             return Err(Box::new(CBSError::AlreadySolved));
         }
+        let low_level_solver = AStarLowLevelSolver::new();
         let root = ConflictTreeNode::new(
             self.instance.agents.iter().collect(),
             Vec::<Box<Constraint>>::new(),
@@ -100,6 +101,7 @@ impl CBS {
                 None
             },
             self.optimisation_config.conflict_avoidance_table,
+            &low_level_solver,
         );
         let solution = a_star(root);
         self.solved = true;

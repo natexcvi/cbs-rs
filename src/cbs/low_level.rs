@@ -1,4 +1,5 @@
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
     hash::Hash,
     rc::Rc,
@@ -244,28 +245,70 @@ impl AStarNode<'_> for PathFindingNode<'_> {
     }
 }
 
-pub fn find_shortest_path(
-    grid: Grid,
-    start: LocationTime,
-    conflict_avoidance_table: &HashSet<LocationTime>,
-) -> Option<(Vec<LocationTime>, usize)> {
-    let heuristic = heuristic::TrueDistance::new(Rc::new(grid.clone()), start.location.clone());
-    let t0 = std::time::Instant::now();
-    let h = heuristic.h(&start);
-    log::debug!("Calculating heuristic took {:?}", t0.elapsed());
-    let start_node = PathFindingNode::new(
-        start,
-        0.0,
-        h as f64,
-        &grid,
-        &conflict_avoidance_table,
-        &heuristic,
-    );
-    let solution = a_star(start_node).expect("should find path");
-    Some((
-        solution.path.iter().map(|node| node.loc_time).collect(),
-        solution.nodes_generated as usize,
-    ))
+pub(crate) trait LowLevelSolver {
+    fn find_shortest_path(
+        &self,
+        agent_id: String,
+        grid: Grid,
+        start: LocationTime,
+        conflict_avoidance_table: &HashSet<LocationTime>,
+    ) -> Option<(Vec<LocationTime>, usize)>;
+}
+
+pub struct AStarLowLevelSolver {
+    heuristic_cache: RefCell<HashMap<String, Rc<dyn Heuristic<LocationTime>>>>,
+}
+
+impl AStarLowLevelSolver {
+    pub fn new() -> AStarLowLevelSolver {
+        AStarLowLevelSolver {
+            heuristic_cache: RefCell::new(HashMap::new()),
+        }
+    }
+
+    fn get_heuristic(
+        &self,
+        agent_id: String,
+        grid: &Grid,
+        start: &LocationTime,
+    ) -> Rc<dyn Heuristic<LocationTime>> {
+        let mut cache = self.heuristic_cache.borrow_mut();
+        let heuristic = cache.entry(agent_id).or_insert_with(|| {
+            Rc::new(heuristic::TrueDistance::new(
+                Rc::new(grid.clone()),
+                start.location.clone(),
+            ))
+        });
+        Rc::clone(&heuristic)
+    }
+}
+
+impl LowLevelSolver for AStarLowLevelSolver {
+    fn find_shortest_path(
+        &self,
+        agent_id: String,
+        grid: Grid,
+        start: LocationTime,
+        conflict_avoidance_table: &HashSet<LocationTime>,
+    ) -> Option<(Vec<LocationTime>, usize)> {
+        let heuristic = self.get_heuristic(agent_id, &grid, &start);
+        let t0 = std::time::Instant::now();
+        let h = heuristic.h(&start);
+        log::debug!("Calculating heuristic took {:?}", t0.elapsed());
+        let start_node = PathFindingNode::new(
+            start,
+            0.0,
+            h as f64,
+            &grid,
+            &conflict_avoidance_table,
+            heuristic.as_ref(),
+        );
+        let solution = a_star(start_node).expect("should find path");
+        Some((
+            solution.path.iter().map(|node| node.loc_time).collect(),
+            solution.nodes_generated as usize,
+        ))
+    }
 }
 
 mod heuristic;
