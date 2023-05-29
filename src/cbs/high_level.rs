@@ -159,19 +159,14 @@ impl<'a> ConflictTreeNode<'a> {
                 .filter(|a| !ctn.paths.contains_key(*a))
                 .collect::<Vec<_>>()
         );
+        let t0 = std::time::Instant::now();
         ctn.compute_paths();
-        // unsafe {
-        //     fs::write(
-        //         format!("/Users/nate/Git/MRMP/inter_paths{}.txt", FILE_COUNT),
-        //         paths_to_string(&ctn.paths),
-        //     )
-        //     .unwrap();
-        //     FILE_COUNT += 1;
-        // }
+        log::debug!("Time to compute paths: {:?}", t0.elapsed());
+        let t0 = std::time::Instant::now();
         ctn.compute_conflicts();
+        log::debug!("Time to compute conflicts: {:?}", t0.elapsed());
         log::debug!("Number of conflicts: {}", ctn.conflicts.len());
         log::debug!("Number of constraints: {}", ctn.constraints.len());
-        // log::debug!("Constraints: {:?}", ctn.constraints);
         ctn
     }
 
