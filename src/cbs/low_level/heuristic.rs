@@ -169,7 +169,7 @@ impl Heuristic<LocationTime> for TrueDistance {
             None => {
                 drop(best_g);
                 self.compute_h_values(loc_time.location);
-                *self.best_g.borrow().get(&query_node).unwrap()
+                *self.best_g.borrow().get(&query_node).unwrap_or(&f64::INFINITY)
             }
         }
     }

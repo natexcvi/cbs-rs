@@ -72,6 +72,7 @@ use proptest::prelude::*;
         ((4, 0), 4.0),
         ((2, 0), 0.0),
         ((0, 0), 10.0),
+        ((3, 0), f64::INFINITY),
     ],
 )]
 fn test_true_distance(#[case] grid: Grid, #[case] queries: Vec<(Location, f64)>) {
