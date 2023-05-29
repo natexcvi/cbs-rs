@@ -87,7 +87,7 @@ prop_compose! {
 
 proptest! {
     #[rstest]
-    fn test_dynamic_goal_manhatten_distance(
+    fn test_dynamic_goal_manhattan_distance(
         first_goal in arb_location(),
         second_goal in arb_location(),
         query in arb_location(),
