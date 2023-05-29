@@ -87,7 +87,12 @@ prop_compose! {
 
 proptest! {
     #[rstest]
-    fn test_dynamic_goal_manhatten_distance(first_goal in arb_location(), second_goal in arb_location(), query in arb_location(), time in -1..5000) {
+    fn test_dynamic_goal_manhatten_distance(
+        first_goal in arb_location(),
+        second_goal in arb_location(),
+        query in arb_location(),
+        time in -1..5000
+    ) {
         let td = DynamicGoalManhattanDistance::new(first_goal);
         let h = td.h(&LocationTime {
             location: query,
