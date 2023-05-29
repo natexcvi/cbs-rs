@@ -154,6 +154,9 @@ impl TrueDistance {
 }
 
 impl Heuristic<LocationTime> for TrueDistance {
+    /// Returns the true distance from the given location to the goal.
+    /// If the true distance is not known, it is computed on the fly.
+    /// `loc_time` must be reachable from the goal.
     fn h(&self, loc_time: &LocationTime) -> f64 {
         let max_dist_increase_factor = 3.0;
         loop {

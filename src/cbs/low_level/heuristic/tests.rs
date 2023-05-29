@@ -32,8 +32,9 @@ use proptest::prelude::*;
         ),
         (2, 0),
     ),
-    (0, 0),
-    10.0,
+    vec![
+        ((0, 0), 10.0),
+    ],
 )]
 #[case::non_start_node(
     Grid::new(
@@ -67,16 +68,21 @@ use proptest::prelude::*;
         ),
         (2, 0),
     ),
-    (4, 0),
-    4.0,
+    vec![
+        ((4, 0), 4.0),
+        ((2, 0), 0.0),
+        ((0, 0), 10.0),
+    ],
 )]
-fn test_true_distance(#[case] grid: Grid, #[case] query: (i32, i32), #[case] true_distance: f64) {
+fn test_true_distance(#[case] grid: Grid, #[case] queries: Vec<(Location, f64)>) {
     let td = TrueDistance::new(Rc::new(grid), (0, 0));
-    let h = td.h(&LocationTime {
-        location: query,
-        time: 0,
-    });
-    assert_eq!(h, true_distance);
+    for (query, true_distance) in queries {
+        let h = td.h(&LocationTime {
+            location: query,
+            time: 0,
+        });
+        assert_eq!(h, true_distance, "query: {:?}", query);
+    }
 }
 
 prop_compose! {
