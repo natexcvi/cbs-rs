@@ -251,8 +251,13 @@ where
             .or_insert_with(Vec::new)
             .push(agent);
     }
-    for (_, agents) in diagonals.iter_mut() {
-        agents.sort_by_key(|agent| -agent.start.0);
+    for (diag, agents) in diagonals.iter_mut() {
+        agents.sort_by_key(|agent| match (&diag.direction, &diag.half) {
+            (DiagonalDirection::Up, DiagonalHalf::Left) => agent.start.0,
+            (DiagonalDirection::Up, DiagonalHalf::Right) => -agent.start.0,
+            (DiagonalDirection::Down, DiagonalHalf::Left) => -agent.start.0,
+            (DiagonalDirection::Down, DiagonalHalf::Right) => agent.start.0,
+        });
     }
     diagonals
 }
