@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::cbs::high_level::Path;
+use crate::cbs::search::bfs;
 use crate::cbs::{
     high_level::{Agent, Conflict},
     low_level::Grid,
@@ -11,43 +12,6 @@ struct MDDNode<T> {
     goal_reachable: bool,
     visited: bool,
     level: i32,
-}
-
-enum BFSNode<T> {
-    Node(T),
-    Divider,
-}
-
-fn bfs<T, S, F, G>(nodes: &mut HashMap<T, S>, root: T, depth: i32, mut visit: G, mut expand: F)
-where
-    F: FnMut(&mut HashMap<T, S>, T) -> Vec<T>,
-    G: FnMut(&mut HashMap<T, S>, T, i32) -> bool,
-    T: Clone,
-{
-    let mut cur_depth = 0;
-    let mut bfs_queue = VecDeque::<BFSNode<T>>::new();
-    bfs_queue.push_back(BFSNode::Node(root));
-    bfs_queue.push_back(BFSNode::Divider);
-    while !bfs_queue.is_empty() {
-        let node = bfs_queue.pop_front().unwrap();
-        match node {
-            BFSNode::Node(node) => {
-                if visit(nodes, node.clone(), cur_depth) {
-                    continue;
-                }
-                for neighbour in expand(nodes, node) {
-                    bfs_queue.push_back(BFSNode::Node(neighbour));
-                }
-            }
-            BFSNode::Divider => {
-                cur_depth += 1;
-                if cur_depth > depth {
-                    break;
-                }
-                bfs_queue.push_back(BFSNode::Divider);
-            }
-        }
-    }
 }
 
 #[derive(Debug)]
