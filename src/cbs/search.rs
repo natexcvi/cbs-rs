@@ -271,7 +271,7 @@ pub(crate) fn bfs<T, S, F, G>(
     bfs_queue.push_back(BFSNode::Node(root));
     bfs_queue.push_back(BFSNode::Divider);
     while !bfs_queue.is_empty() {
-        let node = bfs_queue.pop_front().unwrap();
+        let node = bfs_queue.pop_front().expect("queue should not be empty");
         match node {
             BFSNode::Node(node) => {
                 if visit(nodes, node.clone(), cur_depth) {
