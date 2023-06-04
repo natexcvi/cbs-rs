@@ -30,7 +30,7 @@ impl Error for CBSError {}
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
-    two_direction_subsolver: bool,
+    diagonal_subsolver: bool,
     conflict_avoidance_table: bool,
 }
 
@@ -44,7 +44,7 @@ impl CBSOptimisationConfig {
         CBSOptimisationConfig {
             priotising_conflicts,
             bypassing_conflicts,
-            two_direction_subsolver,
+            diagonal_subsolver: two_direction_subsolver,
             conflict_avoidance_table,
         }
     }
@@ -95,8 +95,8 @@ impl CBS {
             } else {
                 None
             },
-            if self.optimisation_config.two_direction_subsolver {
-                Some(optimisations::two_direction_subsolver::plan_two_direction_agents)
+            if self.optimisation_config.diagonal_subsolver {
+                Some(optimisations::diagonal_subsolver::plan_two_direction_agents)
             } else {
                 None
             },

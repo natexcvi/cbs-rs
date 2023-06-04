@@ -6,7 +6,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     vec![
@@ -32,7 +32,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     vec![
@@ -58,7 +58,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     vec![
@@ -89,7 +89,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     vec![
@@ -120,7 +120,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     vec![
@@ -180,7 +180,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        diagonal_subsolver: false,
         conflict_avoidance_table: true,
     }),
     "tests/testdata/maps/empty-16-16.map",
@@ -191,7 +191,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        diagonal_subsolver: false,
         conflict_avoidance_table: true,
     }),
     "tests/testdata/maps/maze-128-128-10.map",
@@ -202,7 +202,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: false,
+        diagonal_subsolver: false,
         conflict_avoidance_table: false,
     }),
     "tests/testdata/maps/test_10.map",
@@ -213,7 +213,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        two_direction_subsolver: true,
+        diagonal_subsolver: true,
         conflict_avoidance_table: true,
     }),
     "tests/testdata/maps/up_right_11_transposed.map",
