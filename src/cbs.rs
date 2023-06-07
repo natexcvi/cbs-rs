@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt, rc::Rc};
 
 use self::{
     high_level::{Agent, ConflictTreeNode, Constraint, Path},
@@ -30,7 +30,7 @@ impl Error for CBSError {}
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
-    diagonal_subsolver: bool,
+    diagonal_subsolver: Option<i32>,
     conflict_avoidance_table: bool,
 }
 
@@ -38,13 +38,13 @@ impl CBSOptimisationConfig {
     pub fn new(
         priotising_conflicts: bool,
         bypassing_conflicts: bool,
-        two_direction_subsolver: bool,
+        diagonal_subsolver: Option<i32>,
         conflict_avoidance_table: bool,
     ) -> Self {
         CBSOptimisationConfig {
             priotising_conflicts,
             bypassing_conflicts,
-            diagonal_subsolver: two_direction_subsolver,
+            diagonal_subsolver,
             conflict_avoidance_table,
         }
     }
@@ -71,7 +71,7 @@ impl CBS {
             low_level_generated: 0,
             solved: false,
             optimisation_config: optimisation_config
-                .unwrap_or(CBSOptimisationConfig::new(false, false, false, false)),
+                .unwrap_or(CBSOptimisationConfig::new(false, false, None, false)),
         }
     }
 
@@ -95,8 +95,10 @@ impl CBS {
             } else {
                 None
             },
-            if self.optimisation_config.diagonal_subsolver {
-                Some(optimisations::diagonal_subsolver::plan_two_direction_agents)
+            if let Some(slackness) = self.optimisation_config.diagonal_subsolver {
+                Some(Rc::new(
+                    optimisations::diagonal_subsolver::DiagonalSubsolver::new(slackness),
+                ))
             } else {
                 None
             },

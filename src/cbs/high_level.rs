@@ -5,6 +5,7 @@ use super::{
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
+    rc::Rc,
 };
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -71,7 +72,7 @@ pub struct ConflictTreeNode<'a> {
     conflict_picker:
         fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
     post_expanded_callback: fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
-    node_preprocessor: fn(&mut Self),
+    node_preprocessor: Rc<dyn CTNodePreprocessor>,
     use_conflict_avoidance_table: bool,
     low_level_generated: usize,
     low_level_solver: &'a AStarLowLevelSolver,
@@ -123,7 +124,7 @@ impl<'a> ConflictTreeNode<'a> {
         post_expanded_callback: Option<
             fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
         >,
-        node_preprocessor: Option<fn(&mut Self)>,
+        node_preprocessor: Option<Rc<dyn CTNodePreprocessor>>,
         use_conflict_avoidance_table: bool,
         low_level_solver: &'a AStarLowLevelSolver,
     ) -> ConflictTreeNode<'a> {
@@ -135,7 +136,7 @@ impl<'a> ConflictTreeNode<'a> {
             scenario,
             conflict_picker: |_, _, conflicts| Some(conflicts[0].clone()),
             post_expanded_callback: |_, _, expanded| Some(expanded), // TODO: replace with optimization
-            node_preprocessor: |_| (),
+            node_preprocessor: Rc::new(IdentityPreprocessor::new()),
             low_level_generated: 0,
             use_conflict_avoidance_table,
             low_level_solver,
@@ -149,7 +150,7 @@ impl<'a> ConflictTreeNode<'a> {
         if let Some(preprocessor) = node_preprocessor {
             ctn.node_preprocessor = preprocessor;
         }
-        (ctn.node_preprocessor)(&mut ctn);
+        Rc::clone(&ctn.node_preprocessor).preprocess(&mut ctn);
         log::debug!(
             "Agents left to plan after preprocessing: {}/{}",
             ctn.agents.len() - ctn.paths.len(),
@@ -389,7 +390,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.scenario,
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
-                        Some(self.node_preprocessor),
+                        Some(Rc::clone(&self.node_preprocessor)),
                         self.use_conflict_avoidance_table,
                         self.low_level_solver,
                     )));
@@ -425,7 +426,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         self.scenario,
                         Some(self.conflict_picker),
                         Some(self.post_expanded_callback),
-                        Some(self.node_preprocessor),
+                        Some(Rc::clone(&self.node_preprocessor)),
                         self.use_conflict_avoidance_table,
                         self.low_level_solver,
                     )));
@@ -441,6 +442,22 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
             self.paths, self.conflicts, self.constraints
         )
     }
+}
+
+pub trait CTNodePreprocessor {
+    fn preprocess(&self, node: &mut ConflictTreeNode);
+}
+
+struct IdentityPreprocessor {}
+
+impl IdentityPreprocessor {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
+impl CTNodePreprocessor for IdentityPreprocessor {
+    fn preprocess(&self, _node: &mut ConflictTreeNode) {}
 }
 
 #[cfg(test)]

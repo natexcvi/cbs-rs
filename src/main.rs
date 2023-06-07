@@ -7,10 +7,15 @@ use std::{thread::JoinHandle, time::Duration};
 
 use cbs::io::paths_to_string;
 use cbs::{CBSInstance, CBS};
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+#[clap(group(
+    ArgGroup::new("diagonal-subsolver")
+        .required(false)
+        .args(&["disable_diagonal_subsolver", "diagonal_subsolver_slackness"]),
+))]
 struct Args {
     #[arg(short, long)]
     map_file: String,
@@ -42,8 +47,16 @@ struct Args {
     )]
     num_agents: Option<usize>,
 
-    #[arg(long, default_value = "false")]
+    #[arg(long, default_value = "false", group = "diagonal-subsolver")]
     disable_diagonal_subsolver: bool,
+
+    #[arg(
+        long,
+        default_value = "0",
+        group = "diagonal-subsolver",
+        help = "Allow the diagonal sub-solver to plan paths with up to this number of waits."
+    )]
+    diagonal_subsolver_slackness: i32,
 
     #[arg(long, default_value = "false")]
     disable_bypassing_conflicts: bool,
@@ -67,7 +80,11 @@ fn main() {
     let optimisation_config = Some(cbs::CBSOptimisationConfig::new(
         !args.disable_prioritising_conflicts,
         !args.disable_bypassing_conflicts,
-        !args.disable_diagonal_subsolver,
+        if args.disable_diagonal_subsolver {
+            None
+        } else {
+            Some(args.diagonal_subsolver_slackness)
+        },
         !args.disable_conflict_avoidance_table,
     ));
     let mut cbs = CBS::new(cbs_instance, optimisation_config);

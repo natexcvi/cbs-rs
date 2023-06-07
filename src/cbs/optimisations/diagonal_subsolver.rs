@@ -1,10 +1,27 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::rc::Rc;
 
-use crate::cbs::high_level::{ConflictTreeNode, Path};
+use crate::cbs::high_level::{CTNodePreprocessor, ConflictTreeNode, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
 use crate::cbs::search::dfs;
 use crate::cbs::Agent;
+
+pub(crate) struct DiagonalSubsolver {
+    slackness: i32,
+}
+
+impl DiagonalSubsolver {
+    pub(crate) fn new(slackness: i32) -> Self {
+        Self { slackness }
+    }
+}
+
+impl CTNodePreprocessor for DiagonalSubsolver {
+    fn preprocess(&self, node: &mut ConflictTreeNode) {
+        plan_two_direction_agents(node, self.slackness)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 enum DiagonalDirection {
@@ -30,12 +47,12 @@ impl Diagonal {
     fn direction_vecs(&self) -> Vec<(i32, i32)> {
         match self.direction {
             DiagonalDirection::Up => match self.half {
-                DiagonalHalf::Left => vec![(-1, 0), (0, -1)],
-                DiagonalHalf::Right => vec![(1, 0), (0, 1)],
+                DiagonalHalf::Left => vec![(-1, 0), (0, -1), (0, 0)],
+                DiagonalHalf::Right => vec![(1, 0), (0, 1), (0, 0)],
             },
             DiagonalDirection::Down => match self.half {
-                DiagonalHalf::Left => vec![(0, 1), (-1, 0)],
-                DiagonalHalf::Right => vec![(0, -1), (1, 0)],
+                DiagonalHalf::Left => vec![(0, 1), (-1, 0), (0, 0)],
+                DiagonalHalf::Right => vec![(0, -1), (1, 0), (0, 0)],
             },
         }
     }
@@ -44,7 +61,7 @@ impl Diagonal {
 /// Plans the paths of the agents in the given [`ConflictTreeNode`] using the two-direction
 /// subsolver.
 /// Agents with no individually optimal paths are left unplanned for.
-pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
+pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
 
     let diagonal_kinds = vec![
@@ -67,13 +84,14 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode) {
                 (DiagonalDirection::Down, DiagonalHalf::Right) => diagonal.offset,
             },
         );
-        plan_diagonal_kind(node, chosen_diagonals);
+        plan_diagonal_kind(node, chosen_diagonals, slackness);
     });
 }
 
 fn plan_diagonal_kind<'a, 'b>(
     node: &'a mut ConflictTreeNode<'b>,
     diagonals: Vec<(&Diagonal, &Vec<&'b Agent>)>,
+    slackness: i32,
 ) where
     'b: 'a,
 {
@@ -92,7 +110,8 @@ fn plan_diagonal_kind<'a, 'b>(
             constraint_obstacles.extend(Grid::to_conditional_obstacles(
                 planned_path_obstacles.clone().into_iter().collect(),
             ));
-            let (path, found) = plan_agent_path(agent, diagonal, &aux_grid, &constraint_obstacles);
+            let (path, found) =
+                plan_agent_path(agent, diagonal, &aux_grid, &constraint_obstacles, slackness);
             if !found {
                 continue;
             }
@@ -120,6 +139,7 @@ fn plan_agent_path(
     diagonal: &Diagonal,
     aux_grid: &Grid,
     additional_obstacles: &HashMap<LocationTime, Vec<(i32, i32)>>,
+    slackness: i32,
 ) -> (Vec<(i32, i32)>, bool) {
     let latest_goal_obstacle_time = additional_obstacles
         .iter()
@@ -132,8 +152,15 @@ fn plan_agent_path(
     let found = dfs(
         &mut visited,
         &mut path,
-        &|path, cur, _| {
+        &|path, cur, prev| {
             path.push(cur.location.clone());
+            if let Some(prev) = prev {
+                if cur.location == prev.location
+                    && (slackness == 0 || max_waits_exceeded(path, slackness))
+                {
+                    return false;
+                }
+            }
             true
         },
         &|path, _, _| {
@@ -165,6 +192,19 @@ fn plan_agent_path(
         return (path, false);
     }
     (path, found)
+}
+
+fn max_waits_exceeded(path: &Path, max_waits_allowed: i32) -> bool {
+    let mut num_waits = 0;
+    for i in 1..path.len() {
+        if path[i] == path[i - 1] {
+            num_waits += 1;
+            if num_waits > max_waits_allowed {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 fn is_in_additional_obstacles(
