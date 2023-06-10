@@ -83,6 +83,7 @@ impl AStarNode<'_> for TrueDistanceNode {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct TrueDistance {
     grid: Rc<Grid>,
     best_g: RefCell<HashMap<Rc<TrueDistanceNode>, f64>>,

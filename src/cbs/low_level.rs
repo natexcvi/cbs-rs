@@ -15,6 +15,12 @@ pub struct LocationTime {
     pub time: i32,
 }
 
+impl LocationTime {
+    pub fn new(location: (i32, i32), time: i32) -> Self {
+        Self { location, time }
+    }
+}
+
 impl Hash for LocationTime {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.location.hash(state);
@@ -313,4 +319,5 @@ impl LowLevelSolver for AStarLowLevelSolver {
 
 mod heuristic;
 
+#[cfg(test)]
 mod tests;
