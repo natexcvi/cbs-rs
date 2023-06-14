@@ -185,6 +185,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/empty-16-16.map",
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
+    None,
     vec![6, 20, 7, 23, 15]
 )]
 #[case::maze_128x128(
@@ -196,6 +197,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
+    None,
     vec![305, 364, 134]
 )]
 #[case::diagonal_10(
@@ -207,6 +209,7 @@ fn test_cbs(
     }),
     "tests/testdata/maps/test_10.map",
     "tests/testdata/scenarios/test_10.scen",
+    None,
     vec![12, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
 )] // TODO: confirm this case
 #[case::diagonal_11_transposed(
@@ -218,15 +221,29 @@ fn test_cbs(
     }),
     "tests/testdata/maps/up_right_11_transposed.map",
     "tests/testdata/scenarios/up_right_11_transposed.scen",
+    None,
     vec![25, 13, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28]
+)]
+#[case::paris(
+    Some(CBSOptimisationConfig {
+        priotising_conflicts: true,
+        bypassing_conflicts: true,
+        diagonal_subsolver: Some(0),
+        conflict_avoidance_table: true,
+    }),
+    "tests/testdata/maps/Paris_1_256.map",
+    "tests/testdata/scenarios/Paris_1_256-even-1.scen",
+    Some(3),
+    vec![340, 393, 328]
 )]
 fn test_cbs_from_files(
     #[case] optimisation_config: Option<CBSOptimisationConfig>,
     #[case] map_file: &str,
     #[case] scenario_file: &str,
+    #[case] num_agents: Option<usize>,
     #[case] exp_path_lengths: Vec<usize>,
 ) {
-    let cbs_instance = CBSInstance::from_files(map_file, scenario_file, None)
+    let cbs_instance = CBSInstance::from_files(map_file, scenario_file, num_agents)
         .expect("should be valid scenario files");
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     match cbs.solve() {
