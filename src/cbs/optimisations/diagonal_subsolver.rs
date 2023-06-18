@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::rc::Rc;
 
 use crate::cbs::high_level::{CTNodePreprocessor, ConflictTreeNode, Path};
 use crate::cbs::low_level::{Grid, LocationTime};

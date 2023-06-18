@@ -11,6 +11,7 @@ pub(crate) mod io;
 mod low_level;
 mod optimisations;
 pub mod search;
+mod mdd;
 
 #[derive(Debug)]
 pub enum CBSError {
