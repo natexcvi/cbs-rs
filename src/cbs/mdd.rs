@@ -110,5 +110,34 @@ pub(crate) fn mdd(
     Ok(mdd)
 }
 
+pub(crate) fn merge_mdds(
+    mdd1: &Vec<Vec<(i32, i32)>>,
+    mdd2: &Vec<Vec<(i32, i32)>>,
+    c: i32,
+) -> Vec<Vec<((i32, i32), (i32, i32))>> {
+    let mut mdd = Vec::<Vec<((i32, i32), (i32, i32))>>::new();
+    for _ in 0..c + 1 {
+        mdd.push(Vec::<((i32, i32), (i32, i32))>::new());
+    }
+    for level in 0..c + 1 {
+        let mdd1_level = mdd1
+            .get(level as usize)
+            .or_else(|| mdd1.last())
+            .expect("mdd1 should not be empty");
+        let mdd2_level = mdd2
+            .get(level as usize)
+            .or_else(|| mdd2.last())
+            .expect("mdd2 should not be empty");
+        for node1 in mdd1_level {
+            for node2 in mdd2_level {
+                if node1 != node2 {
+                    mdd[level as usize].push((node1.clone(), node2.clone()));
+                }
+            }
+        }
+    }
+    mdd
+}
+
 #[cfg(test)]
 mod tests;

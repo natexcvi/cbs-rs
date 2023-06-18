@@ -74,3 +74,66 @@ fn test_mdd(
         }
     }
 }
+
+#[rstest]
+#[case::simple(
+    vec![
+        vec![(0,0)],
+        vec![(1,0),(0,1)],
+        vec![(1,1)],
+    ],
+    vec![
+        vec![(1,1)],
+        vec![(1,0),(0,1)],
+        vec![(0,0)],
+    ],
+    vec![
+        vec![((0,0),(1,1))],
+        vec![((1,0),(0,1)),((0,1),(1,0))],
+        vec![((1,1),(0,0))],
+    ],
+)]
+#[case::empty_joint_mdd(
+    vec![
+        vec![(0,0)],
+        vec![(1,0)],
+        vec![(1,1)],
+    ],
+    vec![
+        vec![(1,1)],
+        vec![(1,0)],
+        vec![(0,0)],
+    ],
+    vec![
+        vec![((0,0),(1,1))],
+        vec![],
+        vec![((1,1),(0,0))],
+    ],
+)]
+#[case::different_lengths(
+    vec![
+        vec![(0,0)],
+        vec![(1,0), (0,1)],
+        vec![(1,1)],
+        vec![(1,2)],
+    ],
+    vec![
+        vec![(1,1)],
+        vec![(1,0)],
+        vec![(0,0)],
+    ],
+    vec![
+        vec![((0,0),(1,1))],
+        vec![((0,1), (1,0))],
+        vec![((1,1),(0,0))],
+        vec![((1,2),(0,0))],
+    ],
+)]
+fn test_merge_mdds(
+    #[case] mdd1: Vec<Vec<(i32, i32)>>,
+    #[case] mdd2: Vec<Vec<(i32, i32)>>,
+    #[case] expected: Vec<Vec<((i32, i32), (i32, i32))>>,
+) {
+    let merged = super::merge_mdds(&mdd1, &mdd2, (mdd1.len().max(mdd2.len()) - 1) as i32);
+    assert_eq!(merged, expected);
+}
