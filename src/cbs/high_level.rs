@@ -1,3 +1,5 @@
+use log::debug;
+
 use self::heuristic::Heuristic;
 
 use super::{
@@ -354,6 +356,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
     fn h(&self) -> f64 {
         self.h_value.get().unwrap_or_else(|| {
             let h_value = self.heuristic.h(self);
+            debug!("h: {}", h_value);
             self.h_value.set(Some(h_value));
             h_value
         })

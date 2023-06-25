@@ -226,7 +226,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
-        heuristic: HighLevelHeuristic::ZeroHeuristic,
+        heuristic: HighLevelHeuristic::DGHeuristic,
     }),
     "tests/testdata/maps/up_right_11_transposed.map",
     "tests/testdata/scenarios/up_right_11_transposed.scen",

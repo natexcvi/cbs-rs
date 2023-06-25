@@ -22,6 +22,25 @@ Ok(vec![
     vec![(5,5)],
 ])
 )]
+#[case::non_optimal_path(
+crate::cbs::low_level::Grid::new(16, 16, Grid::to_conditional_obstacles(vec![
+    LocationTime::new((6, 10), 4),
+    LocationTime::new((6, 10), 2),
+]), (0, 0)),
+(6, 6),
+(6, 12),
+7,
+Ok(vec![
+    vec![(6,6)],
+    vec![(6,7), (6,6)],
+    vec![(6,8), (6,7)],
+    vec![(6,9), (6,8)],
+    vec![(6,9)],
+    vec![(6,10)],
+    vec![(6,11)],
+    vec![(6,12)],
+])
+)]
 #[case::with_obstacles(
 crate::cbs::low_level::Grid::new(10, 10, Grid::to_conditional_obstacles(vec![
     LocationTime::new((1, 1), -1),

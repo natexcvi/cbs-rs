@@ -262,7 +262,7 @@ pub(crate) fn bfs<T, S, F, G>(
     mut visit: G,
     mut expand: F,
 ) where
-    F: FnMut(&mut HashMap<T, S>, T) -> Vec<T>,
+    F: FnMut(&mut HashMap<T, S>, T, i32) -> Vec<T>,
     G: FnMut(&mut HashMap<T, S>, T, i32) -> bool,
     T: Clone,
 {
@@ -277,7 +277,7 @@ pub(crate) fn bfs<T, S, F, G>(
                 if visit(nodes, node.clone(), cur_depth) {
                     continue;
                 }
-                for neighbour in expand(nodes, node) {
+                for neighbour in expand(nodes, node, cur_depth) {
                     bfs_queue.push_back(BFSNode::Node(neighbour));
                 }
             }

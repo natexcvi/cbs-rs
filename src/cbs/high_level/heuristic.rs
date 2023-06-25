@@ -9,7 +9,7 @@ use crate::cbs::{
     vertex_cover::{min_vertex_cover, MVCGraph},
 };
 
-use super::{Agent, ConflictTreeNode};
+use super::{Agent, ConflictTreeNode, Path};
 
 pub trait Heuristic {
     fn h(&self, node: &ConflictTreeNode<'_>) -> f64;
@@ -45,7 +45,9 @@ impl<'a> DependencyEdge<'a> {
 
 type DependencyGraph<'a> = HashSet<DependencyEdge<'a>>;
 
-pub(crate) struct DGHeuristic {}
+pub(crate) struct DGHeuristic {
+    joint_mdds: RefCell<HashMap<(Path, Path), Rc<Vec<Vec<((i32, i32), (i32, i32))>>>>>,
+}
 
 impl Heuristic for DGHeuristic {
     fn h(&self, node: &ConflictTreeNode<'_>) -> f64 {
@@ -55,15 +57,29 @@ impl Heuristic for DGHeuristic {
 
 impl DGHeuristic {
     pub(crate) fn new() -> Self {
-        Self {}
+        Self {
+            joint_mdds: RefCell::new(HashMap::new()),
+        }
     }
 
     pub(crate) fn compute(&self, node: &ConflictTreeNode<'_>) -> f64 {
         let mut graph = DependencyGraph::new();
         let mut mdds: HashMap<&Agent, Vec<Vec<(i32, i32)>>> = HashMap::new();
-        for agent in node.agents.iter() {
-            for other_agent in node.agents.iter() {
-                if agent == other_agent {
+        for (i, agent) in node.agents.iter().enumerate() {
+            for j in (i + 1)..node.agents.len() {
+                let other_agent = &node.agents[j];
+                if let Some(joint_mdd) = self
+                    .joint_mdds
+                    .borrow()
+                    .get(&(node.paths[agent].clone(), node.paths[other_agent].clone()))
+                {
+                    if !joint_mdd
+                        .last()
+                        .unwrap()
+                        .contains(&(agent.goal, other_agent.goal))
+                    {
+                        graph.insert(DependencyEdge::new(agent, other_agent, 1.0));
+                    }
                     continue;
                 }
                 let c = node
@@ -73,14 +89,40 @@ impl DGHeuristic {
                     .len()
                     .max(node.paths.get(other_agent).unwrap().len()) as i32;
                 if !mdds.contains_key(agent) {
-                    mdds.insert(agent, mdd(agent, node.scenario, c).unwrap());
+                    let c = (node.paths.get(agent).unwrap().len() as i32);
+                    let mut scenario = node.scenario.clone();
+                    scenario
+                        .obstacles
+                        .extend(node.constraints_to_obstacles(agent));
+                    let mut agent_mdd = mdd(&agent, &scenario, c).unwrap();
+                    agent_mdd.retain(|layer| !layer.is_empty());
+                    mdds.insert(agent, agent_mdd);
                 }
                 if !mdds.contains_key(other_agent) {
-                    mdds.insert(other_agent, mdd(&other_agent, node.scenario, c).unwrap());
+                    let c = (node.paths.get(other_agent).unwrap().len() as i32);
+                    let mut scenario = node.scenario.clone();
+                    scenario
+                        .obstacles
+                        .extend(node.constraints_to_obstacles(agent));
+                    let mut agent_mdd = mdd(&other_agent, &scenario, c).expect(
+                        format!(
+                            "agent {:?} with path {:?} should have an MDD with obstacles {:?}",
+                            other_agent,
+                            node.paths.get(other_agent).unwrap(),
+                            scenario.obstacles
+                        )
+                        .as_str(),
+                    );
+                    agent_mdd.retain(|layer| !layer.is_empty());
+                    mdds.insert(other_agent, agent_mdd);
                 }
                 let mdd1 = mdds.get(agent).expect("should have been computed");
                 let mdd2 = mdds.get(other_agent).expect("should have been computed");
                 let joint_mdd = merge_mdds(&mdd1, &mdd2, c);
+                self.joint_mdds.borrow_mut().insert(
+                    (node.paths[agent].clone(), node.paths[other_agent].clone()),
+                    Rc::new(joint_mdd.clone()),
+                );
                 if !joint_mdd
                     .last()
                     .unwrap()

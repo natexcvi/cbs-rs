@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
-use super::{high_level::Agent, low_level::Grid, search::bfs};
+use super::{
+    high_level::Agent,
+    low_level::{Grid, LocationTime},
+    search::bfs,
+};
 
 struct MDDNode<T> {
     location: T,
     goal_reachable: bool,
-    visited: bool,
+    last_visited_level: i32,
     level: i32,
 }
 
@@ -27,7 +31,7 @@ pub(crate) fn mdd(
     let goal_node = MDDNode {
         location: agent.goal.clone(),
         goal_reachable: true,
-        visited: false,
+        last_visited_level: -1,
         level: 0,
     };
     nodes.insert(agent.goal.clone(), goal_node);
@@ -42,7 +46,7 @@ pub(crate) fn mdd(
             cur_node.level = level;
             false
         },
-        |nodes, node_location| {
+        |nodes, node_location, level| {
             let node = nodes.get_mut(&node_location).unwrap();
             let mut neighbours = Vec::<(i32, i32)>::new();
             let mut neighbouring_cells = vec![
@@ -51,7 +55,13 @@ pub(crate) fn mdd(
                 (node.location.0, node.location.1 - 1),
                 (node.location.0, node.location.1 + 1),
             ];
-            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell, &node_location));
+            neighbouring_cells.retain(|cell| {
+                // scenario.is_valid_location_time(
+                //     &LocationTime::new(*cell, c - (level + 1)),
+                //     &node_location,
+                // )
+                scenario.is_valid_location(cell, &node_location)
+            });
             for neighbour in neighbouring_cells {
                 if nodes.contains_key(&neighbour) {
                     continue;
@@ -59,7 +69,7 @@ pub(crate) fn mdd(
                 let neighbour_node = MDDNode {
                     location: neighbour.clone(),
                     goal_reachable: false,
-                    visited: false,
+                    last_visited_level: -1,
                     level: 0,
                 };
 
@@ -78,16 +88,16 @@ pub(crate) fn mdd(
         c,
         |nodes, node, level| {
             let cur_node = nodes.get_mut(&node).unwrap();
-            if cur_node.visited {
+            if cur_node.last_visited_level == level {
                 return true;
             }
-            cur_node.visited = true;
+            cur_node.last_visited_level = level;
             if cur_node.goal_reachable && cur_node.level + level <= c {
                 mdd[level as usize].push(node);
             }
             false
         },
-        |nodes, node_location| {
+        |nodes, node_location, level| {
             let node = nodes.get_mut(&node_location).unwrap();
             let mut neighbours = Vec::<(i32, i32)>::new();
             let mut neighbouring_cells = vec![
@@ -95,10 +105,14 @@ pub(crate) fn mdd(
                 (node.location.0 + 1, node.location.1),
                 (node.location.0, node.location.1 - 1),
                 (node.location.0, node.location.1 + 1),
+                (node.location.0, node.location.1),
             ];
-            neighbouring_cells.retain(|cell| scenario.is_valid_location(cell, &node_location));
+            neighbouring_cells.retain(|cell| {
+                scenario
+                    .is_valid_location_time(&LocationTime::new(*cell, level + 1), &node_location)
+            });
             for neighbour in neighbouring_cells {
-                if !nodes.contains_key(&neighbour) || nodes[&neighbour].visited {
+                if !nodes.contains_key(&neighbour) {
                     continue;
                 }
                 neighbours.push(neighbour);
