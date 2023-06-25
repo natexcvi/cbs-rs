@@ -6,6 +6,7 @@ use super::{
 };
 use std::{
     any::Any,
+    cell::Cell,
     collections::{HashMap, HashSet},
     hash::Hash,
     rc::Rc,
@@ -79,7 +80,8 @@ pub struct ConflictTreeNode<'a> {
     use_conflict_avoidance_table: bool,
     low_level_generated: usize,
     low_level_solver: &'a AStarLowLevelSolver,
-    heuristic: Rc<dyn Heuristic<'a>>,
+    heuristic: Rc<dyn Heuristic>,
+    h_value: Cell<Option<f64>>,
 }
 
 impl<'a> std::fmt::Debug for ConflictTreeNode<'a> {
@@ -131,7 +133,7 @@ impl<'a> ConflictTreeNode<'a> {
         node_preprocessor: Option<Rc<dyn CTNodePreprocessor>>,
         use_conflict_avoidance_table: bool,
         low_level_solver: &'a AStarLowLevelSolver,
-        heuristic: Rc<dyn Heuristic<'a>>,
+        heuristic: Rc<dyn Heuristic>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -146,6 +148,7 @@ impl<'a> ConflictTreeNode<'a> {
             use_conflict_avoidance_table,
             low_level_solver,
             heuristic,
+            h_value: Cell::new(None),
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -349,7 +352,11 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
     }
 
     fn h(&self) -> f64 {
-        self.heuristic.h(self)
+        self.h_value.get().unwrap_or_else(|| {
+            let h_value = self.heuristic.h(self);
+            self.h_value.set(Some(h_value));
+            h_value
+        })
     }
 
     fn is_goal(&self) -> bool {

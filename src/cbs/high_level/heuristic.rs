@@ -11,8 +11,8 @@ use crate::cbs::{
 
 use super::{Agent, ConflictTreeNode};
 
-pub trait Heuristic<'a>: 'a {
-    fn h(&self, node: &'a ConflictTreeNode<'a>) -> f64;
+pub trait Heuristic {
+    fn h(&self, node: &ConflictTreeNode<'_>) -> f64;
 }
 
 #[derive(Debug)]
@@ -45,35 +45,20 @@ impl<'a> DependencyEdge<'a> {
 
 type DependencyGraph<'a> = HashSet<DependencyEdge<'a>>;
 
-pub(crate) struct DGHeuristic<'a> {
-    graphs: RefCell<HashMap<&'a ConflictTreeNode<'a>, DependencyGraph<'a>>>,
-    h_values: RefCell<HashMap<&'a ConflictTreeNode<'a>, f64>>,
-}
+pub(crate) struct DGHeuristic {}
 
-impl<'a> Heuristic<'a> for DGHeuristic<'a> {
-    fn h(&self, node: &'a ConflictTreeNode<'a>) -> f64 {
-        if !self.h_values.borrow().contains_key(&node) {
-            self.compute(node);
-        }
-        *self
-            .h_values
-            .borrow()
-            .get(&node)
-            .expect("computation should have inserted value")
+impl Heuristic for DGHeuristic {
+    fn h(&self, node: &ConflictTreeNode<'_>) -> f64 {
+        self.compute(node)
     }
 }
 
-impl<'a> DGHeuristic<'a> {
+impl DGHeuristic {
     pub(crate) fn new() -> Self {
-        Self {
-            graphs: RefCell::new(HashMap::new()),
-            h_values: RefCell::new(HashMap::new()),
-        }
+        Self {}
     }
 
-    pub(crate) fn compute(&self, node: &'a ConflictTreeNode<'a>) {
-        let mut graphs = self.graphs.borrow_mut();
-        let mut h_values = self.h_values.borrow_mut();
+    pub(crate) fn compute(&self, node: &ConflictTreeNode<'_>) -> f64 {
         let mut graph = DependencyGraph::new();
         let mut mdds: HashMap<&Agent, Vec<Vec<(i32, i32)>>> = HashMap::new();
         for agent in node.agents.iter() {
@@ -106,8 +91,8 @@ impl<'a> DGHeuristic<'a> {
             }
         }
         let mvc = find_mvc(&graph);
-        h_values.insert(node, mvc.len() as f64);
-        graphs.insert(node, graph);
+        let h = mvc.len() as f64;
+        h
     }
 }
 
@@ -144,8 +129,8 @@ impl ZeroHeuristic {
     }
 }
 
-impl<'a> Heuristic<'a> for ZeroHeuristic {
-    fn h(&self, _node: &'a ConflictTreeNode<'a>) -> f64 {
+impl Heuristic for ZeroHeuristic {
+    fn h(&self, _node: &ConflictTreeNode<'_>) -> f64 {
         0.0
     }
 }
