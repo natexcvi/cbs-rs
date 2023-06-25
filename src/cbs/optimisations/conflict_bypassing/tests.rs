@@ -1,6 +1,6 @@
 use super::bypass_conflict;
 use crate::cbs::{
-    high_level::{Agent, ConflictTreeNode, Path},
+    high_level::{heuristic, Agent, ConflictTreeNode, Path},
     low_level::{AStarLowLevelSolver, Grid},
 };
 use rstest::rstest;
@@ -77,6 +77,7 @@ fn test_bypass_conflict(
         None,
         true,
         &low_level_solver,
+        std::rc::Rc::new(heuristic::ZeroHeuristic::new()),
     );
     let conflict = parent.conflicts[conflict_idx].clone();
     let children: Vec<ConflictTreeNode> = children_paths
@@ -96,6 +97,7 @@ fn test_bypass_conflict(
                 None,
                 true,
                 &low_level_solver,
+                std::rc::Rc::new(heuristic::ZeroHeuristic::new()),
             )
         })
         .collect();

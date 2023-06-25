@@ -70,6 +70,14 @@ struct Args {
         help = "Disable the conflict avoidance table"
     )]
     disable_conflict_avoidance_table: bool,
+
+    #[arg(
+        long = "heuristic",
+        default_value = "zero",
+        value_enum,
+        help = "The high level heuristic to use. Either 'zero' or 'dg'."
+    )]
+    heuristic: Option<cbs::HighLevelHeuristic>,
 }
 
 fn main() {
@@ -86,6 +94,7 @@ fn main() {
             Some(args.diagonal_subsolver_slackness)
         },
         !args.disable_conflict_avoidance_table,
+        args.heuristic,
     ));
     let mut cbs = CBS::new(cbs_instance, optimisation_config);
     let is_solving = Arc::new(AtomicBool::new(true));

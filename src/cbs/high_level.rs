@@ -1,8 +1,11 @@
+use self::heuristic::Heuristic;
+
 use super::{
     low_level::{AStarLowLevelSolver, Grid, LocationTime, LowLevelSolver},
     search::AStarNode,
 };
 use std::{
+    any::Any,
     collections::{HashMap, HashSet},
     hash::Hash,
     rc::Rc,
@@ -76,6 +79,7 @@ pub struct ConflictTreeNode<'a> {
     use_conflict_avoidance_table: bool,
     low_level_generated: usize,
     low_level_solver: &'a AStarLowLevelSolver,
+    heuristic: Rc<dyn Heuristic<'a>>,
 }
 
 impl<'a> std::fmt::Debug for ConflictTreeNode<'a> {
@@ -127,6 +131,7 @@ impl<'a> ConflictTreeNode<'a> {
         node_preprocessor: Option<Rc<dyn CTNodePreprocessor>>,
         use_conflict_avoidance_table: bool,
         low_level_solver: &'a AStarLowLevelSolver,
+        heuristic: Rc<dyn Heuristic<'a>>,
     ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
@@ -140,6 +145,7 @@ impl<'a> ConflictTreeNode<'a> {
             low_level_generated: 0,
             use_conflict_avoidance_table,
             low_level_solver,
+            heuristic,
         };
         if let Some(pick_conflict) = conflict_picker {
             ctn.conflict_picker = pick_conflict;
@@ -343,7 +349,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
     }
 
     fn h(&self) -> f64 {
-        0.0 // TODO: more useful heuristic
+        self.heuristic.h(self)
     }
 
     fn is_goal(&self) -> bool {
@@ -393,6 +399,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(Rc::clone(&self.node_preprocessor)),
                         self.use_conflict_avoidance_table,
                         self.low_level_solver,
+                        Rc::clone(&self.heuristic),
                     )));
                 }
             }
@@ -429,6 +436,7 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
                         Some(Rc::clone(&self.node_preprocessor)),
                         self.use_conflict_avoidance_table,
                         self.low_level_solver,
+                        Rc::clone(&self.heuristic),
                     )));
                 }
             }
@@ -460,5 +468,6 @@ impl CTNodePreprocessor for IdentityPreprocessor {
     fn preprocess(&self, _node: &mut ConflictTreeNode) {}
 }
 
+pub(crate) mod heuristic;
 #[cfg(test)]
 mod tests;

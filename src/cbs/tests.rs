@@ -8,6 +8,7 @@ use rstest::rstest;
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     vec![
         Agent {
@@ -34,6 +35,7 @@ use rstest::rstest;
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     vec![
         Agent {
@@ -60,6 +62,7 @@ use rstest::rstest;
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     vec![
         Agent {
@@ -91,6 +94,7 @@ use rstest::rstest;
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     vec![
         Agent {
@@ -122,6 +126,7 @@ use rstest::rstest;
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     vec![
         Agent {
@@ -182,6 +187,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: None,
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     "tests/testdata/maps/empty-16-16.map",
     "tests/testdata/scenarios/empty-16-16-even-1.scen",
@@ -194,6 +200,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: None,
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     "tests/testdata/maps/maze-128-128-10.map",
     "tests/testdata/scenarios/maze-128-128-10-even-1.scen",
@@ -206,6 +213,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: None,
         conflict_avoidance_table: false,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     "tests/testdata/maps/test_10.map",
     "tests/testdata/scenarios/test_10.scen",
@@ -218,6 +226,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
     "tests/testdata/maps/up_right_11_transposed.map",
     "tests/testdata/scenarios/up_right_11_transposed.scen",
@@ -230,6 +239,7 @@ fn test_cbs(
         bypassing_conflicts: true,
         diagonal_subsolver: Some(0),
         conflict_avoidance_table: true,
+        heuristic: HighLevelHeuristic::DGHeuristic,
     }),
     "tests/testdata/maps/Paris_1_256.map",
     "tests/testdata/scenarios/Paris_1_256-even-1.scen",

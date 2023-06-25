@@ -1,5 +1,7 @@
 use std::{collections::HashMap, error::Error, fmt, rc::Rc};
 
+use clap::Parser;
+
 use self::{
     high_level::{Agent, ConflictTreeNode, Constraint, Path},
     low_level::{AStarLowLevelSolver, Grid},
@@ -9,11 +11,12 @@ use self::{
 mod high_level;
 pub(crate) mod io;
 mod low_level;
+mod mdd;
 mod optimisations;
 pub mod search;
-mod mdd;
+mod vertex_cover;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CBSError {
     AlreadySolved,
 }
@@ -28,11 +31,28 @@ impl fmt::Display for CBSError {
 
 impl Error for CBSError {}
 
+#[derive(Parser, Debug, Clone)]
+pub enum HighLevelHeuristic {
+    ZeroHeuristic,
+    DGHeuristic,
+}
+
+impl From<String> for HighLevelHeuristic {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "zero" => HighLevelHeuristic::ZeroHeuristic,
+            "dg" => HighLevelHeuristic::DGHeuristic,
+            _ => panic!("Invalid high level heuristic"),
+        }
+    }
+}
+
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
     diagonal_subsolver: Option<i32>,
     conflict_avoidance_table: bool,
+    heuristic: HighLevelHeuristic,
 }
 
 impl CBSOptimisationConfig {
@@ -41,12 +61,14 @@ impl CBSOptimisationConfig {
         bypassing_conflicts: bool,
         diagonal_subsolver: Option<i32>,
         conflict_avoidance_table: bool,
+        high_level_heuristic: Option<HighLevelHeuristic>,
     ) -> Self {
         CBSOptimisationConfig {
             priotising_conflicts,
             bypassing_conflicts,
             diagonal_subsolver,
             conflict_avoidance_table,
+            heuristic: high_level_heuristic.unwrap_or(HighLevelHeuristic::ZeroHeuristic),
         }
     }
 }
@@ -72,7 +94,7 @@ impl CBS {
             low_level_generated: 0,
             solved: false,
             optimisation_config: optimisation_config
-                .unwrap_or(CBSOptimisationConfig::new(false, false, None, false)),
+                .unwrap_or(CBSOptimisationConfig::new(false, false, None, false, None)),
         }
     }
 
@@ -105,6 +127,14 @@ impl CBS {
             },
             self.optimisation_config.conflict_avoidance_table,
             &low_level_solver,
+            match self.optimisation_config.heuristic {
+                HighLevelHeuristic::ZeroHeuristic => {
+                    Rc::new(high_level::heuristic::ZeroHeuristic::new())
+                }
+                HighLevelHeuristic::DGHeuristic => {
+                    Rc::new(high_level::heuristic::DGHeuristic::new())
+                }
+            },
         );
         let solution = a_star(root);
         self.solved = true;

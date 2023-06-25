@@ -50,6 +50,7 @@ fn test_high_level() {
         None,
         true,
         &low_level_solver,
+        Rc::new(heuristic::ZeroHeuristic::new()),
     );
     assert_eq!(ctn.conflicts.len(), 13);
     match ctn.expand() {
@@ -62,4 +63,5 @@ fn test_high_level() {
         }
         None => panic!("No expanded nodes"),
     }
+    drop(ctn);
 }
