@@ -87,30 +87,10 @@ impl DGHeuristic {
                     as i32)
                     - 1;
                 if !mdds.contains_key(agent) {
-                    let c = (node.paths.get(agent).unwrap().len() as i32) - 1;
-                    let mut scenario = node.scenario.clone();
-                    scenario
-                        .obstacles
-                        .extend(node.constraints_to_obstacles(agent));
-                    let agent_mdd = mdd(&agent, &scenario, c).unwrap();
-                    mdds.insert(agent, agent_mdd);
+                    mdds.insert(agent, compute_agent_mdd(node, agent));
                 }
                 if !mdds.contains_key(other_agent) {
-                    let c = (node.paths.get(other_agent).unwrap().len() as i32) - 1;
-                    let mut scenario = node.scenario.clone();
-                    scenario
-                        .obstacles
-                        .extend(node.constraints_to_obstacles(other_agent));
-                    let agent_mdd = mdd(&other_agent, &scenario, c).expect(
-                        format!(
-                            "agent {:?} with path {:?} should have an MDD with obstacles {:?}",
-                            other_agent,
-                            node.paths.get(other_agent).unwrap(),
-                            scenario.obstacles
-                        )
-                        .as_str(),
-                    );
-                    mdds.insert(other_agent, agent_mdd);
+                    mdds.insert(other_agent, compute_agent_mdd(node, other_agent));
                 }
                 let mdd1 = mdds.get(agent).expect("should have been computed");
                 let mdd2 = mdds.get(other_agent).expect("should have been computed");
@@ -133,6 +113,16 @@ impl DGHeuristic {
         let h = mvc.len() as f64;
         h
     }
+}
+
+fn compute_agent_mdd(node: &ConflictTreeNode<'_>, agent: &&Agent) -> Vec<Vec<(i32, i32)>> {
+    let c = (node.paths.get(agent).unwrap().len() as i32) - 1;
+    let mut scenario = node.scenario.clone();
+    scenario
+        .obstacles
+        .extend(node.constraints_to_obstacles(agent));
+    let agent_mdd = mdd(&agent, &scenario, c).unwrap();
+    agent_mdd
 }
 
 fn is_joint_mdd_empty(
