@@ -56,6 +56,28 @@ use rstest::rstest;
     vec![],
     1.0
 )]
+#[case::cardinal_rectangle_conflict(
+    Grid::new(
+        3, 
+        3,
+        Grid::to_conditional_obstacles(vec![]),
+        (0, 0),
+    ),
+    vec![
+        vec![
+            (1, 0),
+            (1, 1),
+            (1, 2),
+        ],
+        vec![
+            (0, 1),
+            (1, 1),
+            (2, 1),
+        ],
+    ],
+    vec![],
+    1.0
+)]
 #[case::cardinal_vertex_conflict(
     Grid::new(
         3, 
