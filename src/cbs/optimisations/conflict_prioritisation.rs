@@ -34,8 +34,8 @@ fn cardinality(
             time = c.time;
         }
     }
-    let c1 = paths[agent1].len();
-    let c2 = paths[agent2].len();
+    let c1 = paths[agent1].len() - 1;
+    let c2 = paths[agent2].len() - 1;
     let agent1_mdd = mdd(agent1, scenario, c1 as i32).unwrap();
     let agent2_mdd = mdd(agent2, scenario, c2 as i32).unwrap();
     if agent1_mdd[time.clone() as usize].len() == 1

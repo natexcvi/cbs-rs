@@ -148,6 +148,23 @@ fn test_mdd(
         vec![((1,2),(0,0))],
     ],
 )]
+#[case::empty_mid_layers(
+    vec![
+        vec![(0,0)],
+        vec![(0,1)],
+        vec![(1,1)],
+    ],
+    vec![
+        vec![(1,1)],
+        vec![(0,1)],
+        vec![(0,0)],
+    ],
+    vec![
+        vec![((0,0),(1,1))],
+        vec![],
+        vec![((1,1),(0,0))],
+    ],
+)]
 fn test_merge_mdds(
     #[case] mdd1: Vec<Vec<(i32, i32)>>,
     #[case] mdd2: Vec<Vec<(i32, i32)>>,

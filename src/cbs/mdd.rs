@@ -120,7 +120,7 @@ pub(crate) fn mdd(
             neighbours
         },
     );
-
+    let a = 9;
     Ok(mdd)
 }
 
@@ -144,8 +144,11 @@ pub(crate) fn merge_mdds(
             .expect("mdd2 should not be empty");
         for node1 in mdd1_level {
             for node2 in mdd2_level {
-                if node1 != node2 {
-                    mdd[level as usize].push((node1.clone(), node2.clone()));
+                let joint_loc = (node1.clone(), node2.clone());
+                if node1 != node2
+                    && !mdd[(level - 1).max(0) as usize].contains(&(joint_loc.1, joint_loc.0))
+                {
+                    mdd[level as usize].push(joint_loc);
                 }
             }
         }

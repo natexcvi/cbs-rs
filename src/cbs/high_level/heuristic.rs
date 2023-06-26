@@ -73,38 +73,35 @@ impl DGHeuristic {
                     .borrow()
                     .get(&(node.paths[agent].clone(), node.paths[other_agent].clone()))
                 {
-                    if !joint_mdd
-                        .last()
-                        .unwrap()
-                        .contains(&(agent.goal, other_agent.goal))
-                    {
+                    if is_joint_mdd_empty(&*joint_mdd, agent, other_agent) {
                         graph.insert(DependencyEdge::new(agent, other_agent, 1.0));
                     }
                     continue;
                 }
-                let c = node
+                let c = (node
                     .paths
                     .get(agent)
                     .unwrap()
                     .len()
-                    .max(node.paths.get(other_agent).unwrap().len()) as i32;
+                    .max(node.paths.get(other_agent).unwrap().len())
+                    as i32)
+                    - 1;
                 if !mdds.contains_key(agent) {
-                    let c = (node.paths.get(agent).unwrap().len() as i32);
+                    let c = (node.paths.get(agent).unwrap().len() as i32) - 1;
                     let mut scenario = node.scenario.clone();
                     scenario
                         .obstacles
                         .extend(node.constraints_to_obstacles(agent));
-                    let mut agent_mdd = mdd(&agent, &scenario, c).unwrap();
-                    agent_mdd.retain(|layer| !layer.is_empty());
+                    let agent_mdd = mdd(&agent, &scenario, c).unwrap();
                     mdds.insert(agent, agent_mdd);
                 }
                 if !mdds.contains_key(other_agent) {
-                    let c = (node.paths.get(other_agent).unwrap().len() as i32);
+                    let c = (node.paths.get(other_agent).unwrap().len() as i32) - 1;
                     let mut scenario = node.scenario.clone();
                     scenario
                         .obstacles
-                        .extend(node.constraints_to_obstacles(agent));
-                    let mut agent_mdd = mdd(&other_agent, &scenario, c).expect(
+                        .extend(node.constraints_to_obstacles(other_agent));
+                    let agent_mdd = mdd(&other_agent, &scenario, c).expect(
                         format!(
                             "agent {:?} with path {:?} should have an MDD with obstacles {:?}",
                             other_agent,
@@ -113,7 +110,6 @@ impl DGHeuristic {
                         )
                         .as_str(),
                     );
-                    agent_mdd.retain(|layer| !layer.is_empty());
                     mdds.insert(other_agent, agent_mdd);
                 }
                 let mdd1 = mdds.get(agent).expect("should have been computed");
@@ -123,11 +119,12 @@ impl DGHeuristic {
                     (node.paths[agent].clone(), node.paths[other_agent].clone()),
                     Rc::new(joint_mdd.clone()),
                 );
-                if !joint_mdd
-                    .last()
-                    .unwrap()
-                    .contains(&(agent.goal, other_agent.goal))
-                {
+                if is_joint_mdd_empty(&joint_mdd, agent, other_agent) {
+                    log::debug!(
+                        "agent {:?} and agent {:?} have a dependency",
+                        agent,
+                        other_agent
+                    );
                     graph.insert(DependencyEdge::new(agent, other_agent, 1.0));
                 }
             }
@@ -136,6 +133,18 @@ impl DGHeuristic {
         let h = mvc.len() as f64;
         h
     }
+}
+
+fn is_joint_mdd_empty(
+    joint_mdd: &Vec<Vec<((i32, i32), (i32, i32))>>,
+    agent: &&Agent,
+    other_agent: &&Agent,
+) -> bool {
+    !joint_mdd
+        .last()
+        .unwrap()
+        .contains(&(agent.goal, other_agent.goal))
+        || joint_mdd.iter().any(|layer| layer.is_empty())
 }
 
 fn find_mvc<'a>(graph: &'a HashSet<DependencyEdge<'a>>) -> Vec<Rc<&'a Agent>> {
@@ -176,3 +185,6 @@ impl Heuristic for ZeroHeuristic {
         0.0
     }
 }
+
+#[cfg(test)]
+mod tests;
