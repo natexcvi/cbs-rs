@@ -6,7 +6,7 @@ use super::*;
 use rstest::rstest;
 
 #[rstest]
-#[case(
+#[case::no_cardinal_conflict(
     Grid::new(
         5, 
         5,
