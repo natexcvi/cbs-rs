@@ -1,10 +1,12 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
+    fs::OpenOptions,
     rc::Rc,
 };
 
 use crate::cbs::{
+    low_level::LocationTime,
     mdd::{mdd, merge_mdds},
     vertex_cover::{min_vertex_cover, MVCGraph},
 };
@@ -44,9 +46,11 @@ impl<'a> DependencyEdge<'a> {
 }
 
 type DependencyGraph<'a> = HashSet<DependencyEdge<'a>>;
+type AgentWithConstraints = (String, Vec<(LocationTime, Vec<(i32, i32)>)>);
+type AgentWithConstraintsPair = (Rc<AgentWithConstraints>, Rc<AgentWithConstraints>);
 
 pub(crate) struct DGHeuristic {
-    joint_mdds: RefCell<HashMap<(Path, Path), Rc<Vec<Vec<((i32, i32), (i32, i32))>>>>>,
+    dependency_edges: RefCell<HashMap<AgentWithConstraintsPair, f64>>,
 }
 
 impl Heuristic for DGHeuristic {
@@ -58,23 +62,45 @@ impl Heuristic for DGHeuristic {
 impl DGHeuristic {
     pub(crate) fn new() -> Self {
         Self {
-            joint_mdds: RefCell::new(HashMap::new()),
+            dependency_edges: RefCell::new(HashMap::new()),
         }
+    }
+
+    fn get_dependency_weight(
+        &self,
+        agent: Rc<AgentWithConstraints>,
+        other_agent: Rc<AgentWithConstraints>,
+    ) -> Option<f64> {
+        self.dependency_edges
+            .borrow()
+            .get(&(agent, other_agent))
+            .copied()
     }
 
     pub(crate) fn compute(&self, node: &ConflictTreeNode<'_>) -> f64 {
         let mut graph = DependencyGraph::new();
         let mut mdds: HashMap<&Agent, Vec<Vec<(i32, i32)>>> = HashMap::new();
+        let mut agents_with_constraints: HashMap<&&Agent, Rc<AgentWithConstraints>> =
+            HashMap::new();
         for (i, agent) in node.agents.iter().enumerate() {
             for j in (i + 1)..node.agents.len() {
                 let other_agent = &node.agents[j];
-                if let Some(joint_mdd) = self
-                    .joint_mdds
-                    .borrow()
-                    .get(&(node.paths[agent].clone(), node.paths[other_agent].clone()))
-                {
-                    if is_joint_mdd_empty(&*joint_mdd, agent, other_agent) {
-                        graph.insert(DependencyEdge::new(agent, other_agent, 1.0));
+                if !agents_with_constraints.contains_key(agent) {
+                    agents_with_constraints
+                        .insert(agent, self.to_agent_with_constraints(agent, node));
+                }
+                if !agents_with_constraints.contains_key(other_agent) {
+                    agents_with_constraints.insert(
+                        other_agent,
+                        self.to_agent_with_constraints(other_agent, node),
+                    );
+                }
+                if let Some(dep_weight) = self.get_dependency_weight(
+                    Rc::clone(&agents_with_constraints[agent]),
+                    Rc::clone(&agents_with_constraints[other_agent]),
+                ) {
+                    if dep_weight > 0.0 {
+                        graph.insert(DependencyEdge::new(agent, other_agent, dep_weight));
                     }
                     continue;
                 }
@@ -95,10 +121,7 @@ impl DGHeuristic {
                 let mdd1 = mdds.get(agent).expect("should have been computed");
                 let mdd2 = mdds.get(other_agent).expect("should have been computed");
                 let joint_mdd = merge_mdds(&mdd1, &mdd2, c);
-                self.joint_mdds.borrow_mut().insert(
-                    (node.paths[agent].clone(), node.paths[other_agent].clone()),
-                    Rc::new(joint_mdd.clone()),
-                );
+                let mut dep_weight = 0.0;
                 if is_joint_mdd_empty(&joint_mdd, agent, other_agent) {
                     log::debug!(
                         "agent {:?} and agent {:?} have a dependency",
@@ -106,12 +129,43 @@ impl DGHeuristic {
                         other_agent
                     );
                     graph.insert(DependencyEdge::new(agent, other_agent, 1.0));
+                    dep_weight = 1.0;
                 }
+                self.cache_dependency_weight(
+                    Rc::clone(&agents_with_constraints[agent]),
+                    Rc::clone(&agents_with_constraints[other_agent]),
+                    dep_weight,
+                );
             }
         }
         let mvc = find_mvc(&graph);
         let h = mvc.len() as f64;
         h
+    }
+
+    fn cache_dependency_weight(
+        &self,
+        agent: Rc<AgentWithConstraints>,
+        other_agent: Rc<AgentWithConstraints>,
+        weight: f64,
+    ) {
+        self.dependency_edges
+            .borrow_mut()
+            .insert((agent, other_agent), weight);
+    }
+    fn to_agent_with_constraints(
+        &self,
+        agent: &&Agent,
+        node: &ConflictTreeNode<'_>,
+    ) -> Rc<AgentWithConstraints> {
+        let agent_with_constraints = (
+            agent.id.clone(),
+            node.constraints_to_obstacles(agent)
+                .iter()
+                .map(|(loc, coming_from)| (loc.clone(), coming_from.clone()))
+                .collect::<Vec<_>>(),
+        );
+        Rc::new(agent_with_constraints)
     }
 }
 
