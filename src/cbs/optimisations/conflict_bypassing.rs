@@ -21,6 +21,7 @@ pub fn bypass_conflict<'a>(
             if new_parent.conflicts.len() >= parent.conflicts.len() {
                 continue;
             }
+            new_parent.invalidate_cached_h_values();
             return Some(vec![Box::new(new_parent)]);
         }
     }

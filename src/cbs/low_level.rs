@@ -160,7 +160,7 @@ impl<'a> std::fmt::Debug for PathFindingNode<'a> {
 
 impl PartialEq for PathFindingNode<'_> {
     fn eq(&self, other: &Self) -> bool {
-        self.loc_time == other.loc_time //&& self.grid == other.grid
+        self.loc_time == other.loc_time
     }
 }
 

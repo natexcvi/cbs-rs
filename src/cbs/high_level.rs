@@ -7,7 +7,6 @@ use super::{
     search::AStarNode,
 };
 use std::{
-    any::Any,
     cell::Cell,
     collections::{HashMap, HashSet},
     hash::Hash,
@@ -346,6 +345,10 @@ impl<'a> ConflictTreeNode<'a> {
             })
             .collect()
     }
+
+    pub(crate) fn invalidate_cached_h_values(&self) {
+        self.h_value.set(None);
+    }
 }
 
 impl AStarNode<'_> for ConflictTreeNode<'_> {
@@ -355,8 +358,9 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
 
     fn h(&self) -> f64 {
         self.h_value.get().unwrap_or_else(|| {
+            let t0 = std::time::Instant::now();
             let h_value = self.heuristic.h(self);
-            debug!("h: {}", h_value);
+            debug!("Calculating high-level heuristic took {:?}", t0.elapsed());
             self.h_value.set(Some(h_value));
             h_value
         })

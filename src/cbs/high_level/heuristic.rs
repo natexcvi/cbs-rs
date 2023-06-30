@@ -158,13 +158,16 @@ impl DGHeuristic {
         agent: &&Agent,
         node: &ConflictTreeNode<'_>,
     ) -> Rc<AgentWithConstraints> {
-        let agent_with_constraints = (
+        let mut agent_with_constraints = (
             agent.id.clone(),
             node.constraints_to_obstacles(agent)
                 .iter()
                 .map(|(loc, coming_from)| (loc.clone(), coming_from.clone()))
                 .collect::<Vec<_>>(),
         );
+        agent_with_constraints
+            .1
+            .sort_by_key(|(loc, _)| (loc.time, loc.location));
         Rc::new(agent_with_constraints)
     }
 }
