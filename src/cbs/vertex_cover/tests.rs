@@ -44,7 +44,7 @@ fn test_min_vertex_cover(
         vertices.insert(edge.1);
         graph.add_edge(Rc::new(edge.0), Rc::new(edge.1));
     }
-    let cover = min_vertex_cover(&graph, k);
+    let cover = k_vertex_cover(&graph, k);
     match cover {
         Some(cover) => {
             assert!(

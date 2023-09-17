@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::rc::Rc;
 
 use crate::cbs::high_level::{CTNodePreprocessor, ConflictTreeNode, Path};
 use crate::cbs::low_level::{Grid, LocationTime};
 use crate::cbs::search::dfs;
+use crate::cbs::vertex_cover::{k_vertex_cover, min_vertex_cover, MVCGraph};
 use crate::cbs::Agent;
 
 pub(crate) struct DiagonalSubsolver {
@@ -100,11 +102,24 @@ fn plan_diagonal_kind<'a, 'b>(
         node.scenario.obstacles.clone().into_iter().collect(),
         node.scenario.goal,
     );
+    let mut promoted_agents = Vec::<&Agent>::new();
     for (diagonal, agents) in diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
         let mut planned_path_obstacles = HashSet::<LocationTime>::new();
-        for agent in agents.iter() {
+        let augmented_agents = agents
+            .clone()
+            .to_owned()
+            .into_iter()
+            .chain(promoted_agents.clone().into_iter())
+            .collect::<Vec<_>>();
+        let dependency_graph = build_dependency_graph(&augmented_agents);
+        let agents_to_promote = min_vertex_cover(&dependency_graph);
+        for agent in augmented_agents.iter() {
+            if agents_to_promote.contains(&Rc::new(*agent)) {
+                promoted_agents.push(agent);
+                continue;
+            }
             let mut constraint_obstacles = node.constraints_to_obstacles(agent);
             constraint_obstacles.extend(Grid::to_conditional_obstacles(
                 planned_path_obstacles.clone().into_iter().collect(),
@@ -126,6 +141,7 @@ fn plan_diagonal_kind<'a, 'b>(
                 time: -1,
             });
         }
+        promoted_agents.retain(|agent| !paths.contains_key(agent));
         node.paths.extend(paths);
         aux_grid
             .obstacles
@@ -204,6 +220,28 @@ fn max_waits_exceeded(path: &Path, max_waits_allowed: i32) -> bool {
         }
     }
     false
+}
+
+/// Determines if the two agents, that must come from the same diagonal,
+/// are dependent in the sense that they must cross each other's path.
+fn are_dependent(agent: &Agent, other_agent: &Agent) -> bool {
+    let (x, y) = agent.start;
+    let (other_x, other_y) = other_agent.start;
+    let (goal_x, goal_y) = agent.goal;
+    let (other_goal_x, other_goal_y) = other_agent.goal;
+    (x - other_x) * (goal_x - other_goal_x) < 0 && (y - other_y) * (goal_y - other_goal_y) < 0
+}
+
+fn build_dependency_graph<'a>(agents: &'_ Vec<&'a Agent>) -> MVCGraph<&'a Agent> {
+    let mut graph = MVCGraph::new();
+    for agent in agents.iter() {
+        for other_agent in agents.iter() {
+            if are_dependent(agent, other_agent) {
+                graph.add_edge(Rc::new(*agent), Rc::new(*other_agent));
+            }
+        }
+    }
+    graph
 }
 
 fn is_in_additional_obstacles(

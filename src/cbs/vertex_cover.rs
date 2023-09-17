@@ -60,11 +60,19 @@ where
     pub(crate) fn remove_vertex(&mut self, u: Rc<T>) {
         self.edges.retain(|x| x.0 != u && x.1 != u);
     }
+
+    pub(crate) fn num_vertices(&self) -> usize {
+        self.edges
+            .iter()
+            .flat_map(|(a, b)| vec![a, b])
+            .collect::<HashSet<_>>()
+            .len()
+    }
 }
 
 /// Find a minimum vertex cover of a graph using an iterative
 /// compression based algorithm.
-pub(crate) fn min_vertex_cover<T>(graph: &MVCGraph<T>, k: usize) -> Option<Vec<Rc<T>>>
+pub(crate) fn k_vertex_cover<T>(graph: &MVCGraph<T>, k: usize) -> Option<Vec<Rc<T>>>
 where
     T: Eq + std::hash::Hash + std::fmt::Debug + Clone,
 {
@@ -79,7 +87,7 @@ where
         .expect("should have checked graph is not empty");
     let mut graph_min_u = graph.clone();
     graph_min_u.remove_vertex(Rc::clone(&u));
-    let u_dropped = min_vertex_cover(&graph_min_u, k - 1);
+    let u_dropped = k_vertex_cover(&graph_min_u, k - 1);
     let cover_with_u = if let Some(mut u_dropped) = u_dropped {
         u_dropped.push(Rc::clone(&u));
         Some(u_dropped)
@@ -88,7 +96,7 @@ where
     };
     let mut graph_min_v = graph.clone();
     graph_min_v.remove_vertex(Rc::clone(&v));
-    let v_dropped = min_vertex_cover(&graph_min_v, k - 1);
+    let v_dropped = k_vertex_cover(&graph_min_v, k - 1);
     let cover_with_v = if let Some(mut v_dropped) = v_dropped {
         v_dropped.push(Rc::clone(&v));
         Some(v_dropped)
@@ -106,6 +114,30 @@ where
         (Some(cover_with_u), None) => Some(cover_with_u),
         (None, Some(cover_with_v)) => Some(cover_with_v),
         (None, None) => None,
+    }
+}
+
+pub(crate) fn min_vertex_cover<T>(graph: &MVCGraph<T>) -> Vec<Rc<T>>
+where
+    T: Eq + std::hash::Hash + std::fmt::Debug + Clone,
+{
+    let mut k = 1;
+    loop {
+        let mvc = k_vertex_cover(&graph, k);
+        if mvc.is_some() {
+            return mvc.unwrap();
+        }
+        if k > graph.num_vertices() {
+            panic!(
+                "{}",
+                format!(
+                    "graph has {} vertices, so MVC of size at most {} should exist",
+                    graph.num_vertices(),
+                    k
+                )
+            );
+        }
+        k = 2 * k;
     }
 }
 

@@ -8,7 +8,7 @@ use std::{
 use crate::cbs::{
     low_level::LocationTime,
     mdd::{mdd, merge_mdds},
-    vertex_cover::{min_vertex_cover, MVCGraph},
+    vertex_cover::{k_vertex_cover, MVCGraph, min_vertex_cover},
 };
 
 use super::{Agent, ConflictTreeNode, Path};
@@ -199,24 +199,7 @@ fn find_mvc<'a>(graph: &'a HashSet<DependencyEdge<'a>>) -> Vec<Rc<&'a Agent>> {
     graph.iter().for_each(|edge| {
         mvc_graph.add_edge(Rc::new(edge.from), Rc::new(edge.to));
     });
-    let mut k = 1;
-    loop {
-        let mvc = min_vertex_cover(&mvc_graph, k);
-        if mvc.is_some() {
-            return mvc.unwrap();
-        }
-        if k > graph.len() {
-            panic!(
-                "{}",
-                format!(
-                    "graph has {} vertices, so MVC of size at most {} should exist",
-                    graph.len(),
-                    k
-                )
-            );
-        }
-        k = 2 * k;
-    }
+    min_vertex_cover(&mvc_graph)
 }
 
 pub(crate) struct ZeroHeuristic {}
