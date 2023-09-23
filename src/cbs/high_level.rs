@@ -136,6 +136,58 @@ impl<'a> ConflictTreeNode<'a> {
         low_level_solver: &'a AStarLowLevelSolver,
         heuristic: Rc<dyn Heuristic>,
     ) -> ConflictTreeNode<'a> {
+        let mut ctn = ConflictTreeNode::new_without_init(
+            agents,
+            constraints,
+            scenario,
+            precomputed_paths,
+            conflict_picker,
+            post_expanded_callback,
+            node_preprocessor,
+            use_conflict_avoidance_table,
+            low_level_solver,
+            heuristic,
+        );
+        Rc::clone(&ctn.node_preprocessor).preprocess(&mut ctn);
+        log::debug!(
+            "Agents left to plan after preprocessing: {}/{}",
+            ctn.agents.len() - ctn.paths.len(),
+            ctn.agents.len()
+        );
+        log::debug!(
+            "Agents left to plan for: {:?}",
+            ctn.agents
+                .iter()
+                .filter(|a| !ctn.paths.contains_key(*a))
+                .collect::<Vec<_>>()
+        );
+        let t0 = std::time::Instant::now();
+        ctn.compute_paths();
+        log::debug!("Time to compute paths: {:?}", t0.elapsed());
+        let t0 = std::time::Instant::now();
+        ctn.compute_conflicts();
+        log::debug!("Time to compute conflicts: {:?}", t0.elapsed());
+        log::debug!("Number of conflicts: {}", ctn.conflicts.len());
+        log::debug!("Number of constraints: {}", ctn.constraints.len());
+        ctn
+    }
+
+    pub fn new_without_init(
+        agents: Vec<&'a Agent>,
+        constraints: Vec<Box<Constraint<'a>>>,
+        scenario: &'a Grid,
+        precomputed_paths: HashMap<&'a Agent, Vec<(i32, i32)>>,
+        conflict_picker: Option<
+            fn(&Grid, &HashMap<&Agent, Path>, &Vec<Box<Conflict<'a>>>) -> Option<Box<Conflict<'a>>>,
+        >,
+        post_expanded_callback: Option<
+            fn(&Self, &Conflict<'a>, Vec<Box<Self>>) -> Option<Vec<Box<Self>>>,
+        >,
+        node_preprocessor: Option<Rc<dyn CTNodePreprocessor>>,
+        use_conflict_avoidance_table: bool,
+        low_level_solver: &'a AStarLowLevelSolver,
+        heuristic: Rc<dyn Heuristic>,
+    ) -> ConflictTreeNode<'a> {
         let mut ctn = ConflictTreeNode {
             constraints,
             agents,
@@ -160,27 +212,6 @@ impl<'a> ConflictTreeNode<'a> {
         if let Some(preprocessor) = node_preprocessor {
             ctn.node_preprocessor = preprocessor;
         }
-        Rc::clone(&ctn.node_preprocessor).preprocess(&mut ctn);
-        log::debug!(
-            "Agents left to plan after preprocessing: {}/{}",
-            ctn.agents.len() - ctn.paths.len(),
-            ctn.agents.len()
-        );
-        log::debug!(
-            "Agents left to plan for: {:?}",
-            ctn.agents
-                .iter()
-                .filter(|a| !ctn.paths.contains_key(*a))
-                .collect::<Vec<_>>()
-        );
-        let t0 = std::time::Instant::now();
-        ctn.compute_paths();
-        log::debug!("Time to compute paths: {:?}", t0.elapsed());
-        let t0 = std::time::Instant::now();
-        ctn.compute_conflicts();
-        log::debug!("Time to compute conflicts: {:?}", t0.elapsed());
-        log::debug!("Number of conflicts: {}", ctn.conflicts.len());
-        log::debug!("Number of constraints: {}", ctn.constraints.len());
         ctn
     }
 

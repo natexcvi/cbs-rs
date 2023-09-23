@@ -64,7 +64,6 @@ impl Diagonal {
 /// Agents with no individually optimal paths are left unplanned for.
 pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
-
     let diagonal_kinds = vec![
         (DiagonalDirection::Up, DiagonalHalf::Left),
         (DiagonalDirection::Up, DiagonalHalf::Right),
@@ -102,7 +101,7 @@ fn plan_diagonal_kind<'a, 'b>(
         node.scenario.obstacles.clone().into_iter().collect(),
         node.scenario.goal,
     );
-    let mut promoted_agents = Vec::<&Agent>::new();
+    let mut promoted_agents = HashMap::<&Agent, usize>::new();
     for (diagonal, agents) in diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
@@ -111,13 +110,23 @@ fn plan_diagonal_kind<'a, 'b>(
             .clone()
             .to_owned()
             .into_iter()
-            .chain(promoted_agents.clone().into_iter())
+            .chain(
+                promoted_agents
+                    .clone()
+                    .into_keys()
+                    .collect::<Vec<_>>()
+                    .into_iter(),
+            )
             .collect::<Vec<_>>();
         let dependency_graph = build_dependency_graph(&augmented_agents);
         let agents_to_promote = min_vertex_cover(&dependency_graph);
         for agent in augmented_agents.iter() {
             if agents_to_promote.contains(&Rc::new(*agent)) {
-                promoted_agents.push(agent);
+                promoted_agents
+                    .entry(agent)
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+                log::debug!("promoting agent {}", agent.id);
                 continue;
             }
             let mut constraint_obstacles = node.constraints_to_obstacles(agent);
@@ -135,13 +144,21 @@ fn plan_diagonal_kind<'a, 'b>(
                     time: i as i32,
                 });
             });
+
+            let num_waits = promoted_agents.get(agent).map(|count| *count).unwrap_or(0);
+
+            let path = (0..num_waits)
+                .map(|_| agent.start)
+                .chain(path.into_iter())
+                .collect::<Vec<_>>();
+
             paths.insert(agent, path);
             target_obstacles.push(LocationTime {
                 location: agent.goal.clone(),
                 time: -1,
             });
         }
-        promoted_agents.retain(|agent| !paths.contains_key(agent));
+        promoted_agents.retain(|agent, _| !paths.contains_key(agent));
         node.paths.extend(paths);
         aux_grid
             .obstacles
@@ -229,13 +246,13 @@ fn are_dependent(agent: &Agent, other_agent: &Agent) -> bool {
     let (other_x, other_y) = other_agent.start;
     let (goal_x, goal_y) = agent.goal;
     let (other_goal_x, other_goal_y) = other_agent.goal;
-    (x - other_x) * (goal_x - other_goal_x) < 0 && (y - other_y) * (goal_y - other_goal_y) < 0
+    (x - other_x) * (goal_x - other_goal_x) <= 0 && (y - other_y) * (goal_y - other_goal_y) <= 0
 }
 
 fn build_dependency_graph<'a>(agents: &'_ Vec<&'a Agent>) -> MVCGraph<&'a Agent> {
     let mut graph = MVCGraph::new();
-    for agent in agents.iter() {
-        for other_agent in agents.iter() {
+    for (i, agent) in agents.iter().enumerate() {
+        for other_agent in agents.iter().skip(i + 1) {
             if are_dependent(agent, other_agent) {
                 graph.add_edge(Rc::new(*agent), Rc::new(*other_agent));
             }

@@ -1,14 +1,13 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
-    fs::OpenOptions,
     rc::Rc,
 };
 
 use crate::cbs::{
     low_level::LocationTime,
     mdd::{mdd, merge_mdds},
-    vertex_cover::{k_vertex_cover, MVCGraph, min_vertex_cover},
+    vertex_cover::{MVCGraph, min_vertex_cover},
 };
 
 use super::{Agent, ConflictTreeNode, Path};
