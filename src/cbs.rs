@@ -47,10 +47,24 @@ impl From<String> for HighLevelHeuristic {
     }
 }
 
+pub struct DiagonalSubsolverConfig {
+    slackness: i32,
+    promotion_enabled: bool,
+}
+
+impl DiagonalSubsolverConfig {
+    pub fn new(slackness: i32, promotion_enabled: bool) -> Self {
+        Self {
+            slackness,
+            promotion_enabled,
+        }
+    }
+}
+
 pub struct CBSOptimisationConfig {
     priotising_conflicts: bool,
     bypassing_conflicts: bool,
-    diagonal_subsolver: Option<i32>,
+    diagonal_subsolver: Option<DiagonalSubsolverConfig>,
     conflict_avoidance_table: bool,
     heuristic: HighLevelHeuristic,
 }
@@ -59,7 +73,7 @@ impl CBSOptimisationConfig {
     pub fn new(
         priotising_conflicts: bool,
         bypassing_conflicts: bool,
-        diagonal_subsolver: Option<i32>,
+        diagonal_subsolver: Option<DiagonalSubsolverConfig>,
         conflict_avoidance_table: bool,
         high_level_heuristic: Option<HighLevelHeuristic>,
     ) -> Self {
@@ -118,9 +132,12 @@ impl CBS {
             } else {
                 None
             },
-            if let Some(slackness) = self.optimisation_config.diagonal_subsolver {
+            if let Some(subsolver_config) = &self.optimisation_config.diagonal_subsolver {
                 Some(Rc::new(
-                    optimisations::diagonal_subsolver::DiagonalSubsolver::new(slackness),
+                    optimisations::diagonal_subsolver::DiagonalSubsolver::new(
+                        subsolver_config.slackness,
+                        subsolver_config.promotion_enabled,
+                    ),
                 ))
             } else {
                 None

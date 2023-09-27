@@ -6,7 +6,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
@@ -33,7 +33,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
@@ -60,7 +60,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
@@ -92,7 +92,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
@@ -124,7 +124,7 @@ use rstest::rstest;
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::ZeroHeuristic,
     }),
@@ -224,7 +224,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::DGHeuristic,
     }),
@@ -237,7 +237,7 @@ fn test_cbs(
     Some(CBSOptimisationConfig {
         priotising_conflicts: true,
         bypassing_conflicts: true,
-        diagonal_subsolver: Some(0),
+        diagonal_subsolver: Some(DiagonalSubsolverConfig { slackness:0, promotion_enabled: false }),
         conflict_avoidance_table: true,
         heuristic: HighLevelHeuristic::DGHeuristic,
     }),

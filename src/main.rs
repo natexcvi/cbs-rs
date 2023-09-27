@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::{thread::JoinHandle, time::Duration};
 
 use cbs::io::paths_to_string;
-use cbs::{CBSInstance, CBS};
+use cbs::{CBSInstance, DiagonalSubsolverConfig, CBS};
 use clap::{ArgGroup, Parser};
 
 #[derive(Parser, Debug)]
@@ -58,6 +58,14 @@ struct Args {
     )]
     diagonal_subsolver_slackness: i32,
 
+    #[arg(
+        long,
+        default_value = "false",
+        group = "diagonal-subsolver",
+        help = "Allow the diagonal sub-solver to promote agents."
+    )]
+    diagonal_subsolver_promotion: bool,
+
     #[arg(long, default_value = "false")]
     disable_bypassing_conflicts: bool,
 
@@ -81,7 +89,12 @@ struct Args {
 }
 
 fn main() {
-    env_logger::init();
+    // env_logger::builder()
+    //     .target(env_logger::Target::Pipe(Box::new(
+    //         fs::File::create("log.txt").unwrap(),
+    //     )))
+    //     .init();
+    env_logger::builder().init();
     let args = Args::parse();
     let cbs_instance = CBSInstance::from_files(&args.map_file, &args.agents_file, args.num_agents)
         .expect("should be valid scenario files");
@@ -91,7 +104,10 @@ fn main() {
         if args.disable_diagonal_subsolver {
             None
         } else {
-            Some(args.diagonal_subsolver_slackness)
+            Some(DiagonalSubsolverConfig::new(
+                args.diagonal_subsolver_slackness,
+                args.diagonal_subsolver_promotion,
+            ))
         },
         !args.disable_conflict_avoidance_table,
         args.heuristic,

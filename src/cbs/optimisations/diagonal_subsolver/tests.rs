@@ -155,6 +155,7 @@ fn test_most_populous_diag_type(
         },
     ],
     0,
+    true,
     vec![
         vec![
             (0, 2),
@@ -199,6 +200,7 @@ fn test_most_populous_diag_type(
 
     ],
     0,
+    true,
     vec![
         vec![
             (0, 2),
@@ -284,6 +286,7 @@ fn test_most_populous_diag_type(
         },
     ],
     0,
+    true,
     vec![
         vec![
             (0, 2),
@@ -358,6 +361,7 @@ fn test_plan_two_direction_agents(
     #[case] grid: Grid,
     #[case] agents: Vec<Agent>,
     #[case] slackness: i32,
+    #[case] promotion_enabled: bool,
     #[case] expected_paths: Vec<Vec<(i32, i32)>>,
 ) {
     let borrowed_agents = agents.iter().collect::<Vec<_>>();
@@ -375,7 +379,7 @@ fn test_plan_two_direction_agents(
         Rc::new(crate::cbs::high_level::heuristic::ZeroHeuristic::new()),
     );
 
-    plan_two_direction_agents(&mut node, slackness);
+    plan_two_direction_agents(&mut node, slackness, promotion_enabled);
     let paths = node.paths;
     let expected_paths = expected_paths
         .into_iter()

@@ -10,17 +10,18 @@ use crate::cbs::Agent;
 
 pub(crate) struct DiagonalSubsolver {
     slackness: i32,
+    promotion: bool,
 }
 
 impl DiagonalSubsolver {
-    pub(crate) fn new(slackness: i32) -> Self {
-        Self { slackness }
+    pub(crate) fn new(slackness: i32, promotion: bool) -> Self {
+        Self { slackness, promotion }
     }
 }
 
 impl CTNodePreprocessor for DiagonalSubsolver {
     fn preprocess(&self, node: &mut ConflictTreeNode) {
-        plan_two_direction_agents(node, self.slackness)
+        plan_two_direction_agents(node, self.slackness, self.promotion)
     }
 }
 
@@ -62,7 +63,7 @@ impl Diagonal {
 /// Plans the paths of the agents in the given [`ConflictTreeNode`] using the two-direction
 /// subsolver.
 /// Agents with no individually optimal paths are left unplanned for.
-pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32) {
+pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32, promotion_enabled: bool) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
     let diagonal_kinds = vec![
         (DiagonalDirection::Up, DiagonalHalf::Left),
@@ -84,7 +85,7 @@ pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32) {
                 (DiagonalDirection::Down, DiagonalHalf::Right) => diagonal.offset,
             },
         );
-        plan_diagonal_kind(node, chosen_diagonals, slackness);
+        plan_diagonal_kind(node, chosen_diagonals, slackness, promotion_enabled);
     });
 }
 
@@ -92,6 +93,7 @@ fn plan_diagonal_kind<'a, 'b>(
     node: &'a mut ConflictTreeNode<'b>,
     diagonals: Vec<(&Diagonal, &Vec<&'b Agent>)>,
     slackness: i32,
+    promotion_enabled: bool,
 ) where
     'b: 'a,
 {
@@ -121,7 +123,7 @@ fn plan_diagonal_kind<'a, 'b>(
         let dependency_graph = build_dependency_graph(&augmented_agents);
         let agents_to_promote = min_vertex_cover(&dependency_graph);
         for agent in augmented_agents.iter() {
-            if agents_to_promote.contains(&Rc::new(*agent)) {
+            if promotion_enabled && agents_to_promote.contains(&Rc::new(*agent)) {
                 promoted_agents
                     .entry(agent)
                     .and_modify(|count| *count += 1)
