@@ -15,7 +15,10 @@ pub(crate) struct DiagonalSubsolver {
 
 impl DiagonalSubsolver {
     pub(crate) fn new(slackness: i32, promotion: bool) -> Self {
-        Self { slackness, promotion }
+        Self {
+            slackness,
+            promotion,
+        }
     }
 }
 
@@ -63,7 +66,11 @@ impl Diagonal {
 /// Plans the paths of the agents in the given [`ConflictTreeNode`] using the two-direction
 /// subsolver.
 /// Agents with no individually optimal paths are left unplanned for.
-pub fn plan_two_direction_agents(node: &mut ConflictTreeNode, slackness: i32, promotion_enabled: bool) {
+pub fn plan_two_direction_agents(
+    node: &mut ConflictTreeNode,
+    slackness: i32,
+    promotion_enabled: bool,
+) {
     let diagonals = find_diagonal_sets(node.agents.iter(), &node.scenario);
     let diagonal_kinds = vec![
         (DiagonalDirection::Up, DiagonalHalf::Left),
@@ -97,6 +104,9 @@ fn plan_diagonal_kind<'a, 'b>(
 ) where
     'b: 'a,
 {
+    if diagonals.is_empty() {
+        return;
+    }
     let mut aux_grid = Grid::new(
         node.scenario.width,
         node.scenario.height,
@@ -104,6 +114,18 @@ fn plan_diagonal_kind<'a, 'b>(
         node.scenario.goal,
     );
     let mut promoted_agents = HashMap::<&Agent, usize>::new();
+    // add a dummy diagonal to handle promoted agents
+    // it is another pointer to the last diagonal, but without agents
+    // of its own.
+    let last_diagonal = diagonals
+        .last()
+        .expect("should not be empty if we got here")
+        .0;
+    let empty_agents = vec![];
+    let diagonals = diagonals
+        .into_iter()
+        .chain(vec![(last_diagonal, &empty_agents)])
+        .collect::<Vec<_>>();
     for (diagonal, agents) in diagonals.iter() {
         let mut paths = HashMap::<&Agent, Path>::new();
         let mut target_obstacles = Vec::<LocationTime>::new();
