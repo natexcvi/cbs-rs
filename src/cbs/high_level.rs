@@ -148,7 +148,9 @@ impl<'a> ConflictTreeNode<'a> {
             low_level_solver,
             heuristic,
         );
+        let t0 = std::time::Instant::now();
         Rc::clone(&ctn.node_preprocessor).preprocess(&mut ctn);
+        log::debug!("Time to preprocess high level node: {:?}", t0.elapsed());
         log::debug!(
             "Agents left to plan after preprocessing: {}/{}",
             ctn.agents.len() - ctn.paths.len(),
@@ -414,7 +416,9 @@ impl AStarNode<'_> for ConflictTreeNode<'_> {
         if self.conflicts.is_empty() {
             return Some(expanded);
         }
+        let t0 = std::time::Instant::now();
         let conflict = (self.conflict_picker)(self.scenario, &self.paths, &self.conflicts)?;
+        debug!("Time to pick conflict {:?}", t0.elapsed());
         log::debug!("Expanding conflict: {:?}", conflict);
         match *conflict.clone() {
             Conflict::Vertex(vc) => {
