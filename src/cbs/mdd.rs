@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use cached::proc_macro::cached;
+use cached::{SizedCache, UnboundCache};
+
 use super::{
     high_level::Agent,
     low_level::{Grid, LocationTime},
@@ -13,11 +16,16 @@ struct MDDNode<T> {
     level: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum MDDError {
     GoalUnreachable,
 }
 
+#[cached(
+    type = "SizedCache<String, Result<Vec<Vec<(i32, i32)>>, MDDError>>",
+    create = "{ SizedCache::with_size(10000) }",
+    convert = r#"{ format!("{:?}{:?}{:?}", agent, scenario, c) }"#
+)]
 pub(crate) fn mdd(
     agent: &Agent,
     scenario: &Grid,
@@ -120,10 +128,14 @@ pub(crate) fn mdd(
             neighbours
         },
     );
-    let a = 9;
     Ok(mdd)
 }
 
+#[cached(
+    type = "SizedCache<String, Vec<Vec<((i32, i32), (i32, i32))>>>",
+    create = "{ SizedCache::with_size(10000) }",
+    convert = r#"{ format!("{:?}{:?}{:?}", mdd1, mdd2, c) }"#
+)]
 pub(crate) fn merge_mdds(
     mdd1: &Vec<Vec<(i32, i32)>>,
     mdd2: &Vec<Vec<(i32, i32)>>,
